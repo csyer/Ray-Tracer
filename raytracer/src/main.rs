@@ -54,9 +54,9 @@ impl Ray {
 }
 
 fn ray_color(r: &Ray) -> Color {
-    let unit_direction = unit_vector(&r.dir);
+    let unit_direction = unit_vector(r.dir);
     let t = 0.5 * (unit_direction.y() + 1.0);
-    Color::new(1.0, 1.0, 1.0).dot(1.0 - t) + Color::new(0.5, 0.7, 1.0).dot(t)
+    (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
 }
 
 fn main() {
@@ -78,7 +78,7 @@ fn main() {
     let horizontal = Vec3::new(viewport_width, 0.0, 0.0);
     let vertical = Vec3::new(0.0, viewport_height, 0.0);
     let lower_left_corner =
-        origin - horizontal.dot(0.5) - vertical.dot(0.5) - Vec3::new(0.0, 0.0, focal_length);
+        origin - horizontal / 2.0 - vertical / 2.0 - Vec3::new(0.0, 0.0, focal_length);
 
     for i in 0..image_height {
         for j in 0..image_width {
@@ -86,7 +86,7 @@ fn main() {
             let v = ((image_height - i - 1) as f64) / ((image_height - 1) as f64);
             let r = Ray::new(
                 origin,
-                lower_left_corner + horizontal.dot(u) + vertical.dot(v) - origin,
+                lower_left_corner + u * horizontal + v * vertical - origin,
             );
             let pixel_color = ray_color(&r);
             write_color(&mut img, Position::pos(i, j), pixel_color);
