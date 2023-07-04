@@ -66,7 +66,7 @@ fn hit_sphere(center: Point3, radius: f64, r: Ray) -> bool {
 
 fn ray_color(r: Ray) -> Color {
     if hit_sphere(Point3::new(0.0, 0.0, -1.0), 0.5, r) {
-        return Color::new(0.0, 0.0, 0.0);
+        return Color::new(1.0, 0.0, 0.0);
     }
     let unit_direction = unit_vector(r.dir);
     let t = 0.5 * (unit_direction.y() + 1.0);
