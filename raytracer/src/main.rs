@@ -38,9 +38,11 @@ struct Ray {
 
 // impl Ray {
 //     fn at(&self, t: f64) -> Point3 {
-//         Point3::new(self.orig.x() + t * self.dir.x(),
-//                     self.orig.y() + t * self.dir.y(),
-//                     self.orig.z() + t * self.dir.z())
+//         Point3::new(
+//             self.orig.x() + t * self.dir.x(),
+//             self.orig.y() + t * self.dir.y(),
+//             self.orig.z() + t * self.dir.z(),
+//         )
 //     }
 // }
 
@@ -53,14 +55,26 @@ impl Ray {
     }
 }
 
-fn ray_color(r: &Ray) -> Color {
+fn hit_sphere(center: Point3, radius: f64, r: Ray) -> bool {
+    let oc = r.orig - center;
+    let a = r.dir * r.dir;
+    let b = 2.0 * (oc * r.dir);
+    let c = oc * oc - radius * radius;
+    let discriminant = b * b - 4.0 * a * c;
+    discriminant > 0.0
+}
+
+fn ray_color(r: Ray) -> Color {
+    if hit_sphere(Point3::new(0.0, 0.0, -1.0), 0.5, r) {
+        return Color::new(0.0, 0.0, 0.0);
+    }
     let unit_direction = unit_vector(r.dir);
     let t = 0.5 * (unit_direction.y() + 1.0);
     (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
 }
 
 fn main() {
-    let path = std::path::Path::new("output/book1/image2.jpg");
+    let path = std::path::Path::new("output/book1/image3.jpg");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -88,7 +102,7 @@ fn main() {
                 origin,
                 lower_left_corner + u * horizontal + v * vertical - origin,
             );
-            let pixel_color = ray_color(&r);
+            let pixel_color = ray_color(r);
             write_color(&mut img, Position::pos(i, j), pixel_color);
         }
     }
