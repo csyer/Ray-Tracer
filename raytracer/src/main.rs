@@ -36,15 +36,15 @@ struct Ray {
     dir: Vec3,
 }
 
-// impl Ray {
-//     fn at(&self, t: f64) -> Point3 {
-//         Point3::new(
-//             self.orig.x() + t * self.dir.x(),
-//             self.orig.y() + t * self.dir.y(),
-//             self.orig.z() + t * self.dir.z(),
-//         )
-//     }
-// }
+impl Ray {
+    fn at(&self, t: f64) -> Point3 {
+        Point3::new(
+            self.orig.x() + t * self.dir.x(),
+            self.orig.y() + t * self.dir.y(),
+            self.orig.z() + t * self.dir.z(),
+        )
+    }
+}
 
 impl Ray {
     fn new(origin: Point3, direction: Vec3) -> Ray {
@@ -55,18 +55,25 @@ impl Ray {
     }
 }
 
-fn hit_sphere(center: Point3, radius: f64, r: Ray) -> bool {
+fn hit_sphere(center: Point3, radius: f64, r: Ray) -> f64 {
     let oc = r.orig - center;
     let a = r.dir * r.dir;
     let b = 2.0 * (oc * r.dir);
     let c = oc * oc - radius * radius;
     let discriminant = b * b - 4.0 * a * c;
-    discriminant > 0.0
+
+    if discriminant < 0.0 {
+        -1.0
+    } else {
+        (-b - discriminant.sqrt()) / (2.0 * a)
+    }
 }
 
 fn ray_color(r: Ray) -> Color {
-    if hit_sphere(Point3::new(0.0, 0.0, -1.0), 0.5, r) {
-        return Color::new(1.0, 0.0, 0.0);
+    let t = hit_sphere(Point3::new(0.0, 0.0, -1.0), 0.5, r);
+    if t > 0.0 {
+        let normal = unit_vector(r.at(t) - Vec3::new(0.0, 0.0, -1.0));
+        return 0.5 * Color::new(normal.x() + 1.0, normal.y() + 1.0, normal.z() + 1.0);
     }
     let unit_direction = unit_vector(r.dir);
     let t = 0.5 * (unit_direction.y() + 1.0);
@@ -74,7 +81,7 @@ fn ray_color(r: Ray) -> Color {
 }
 
 fn main() {
-    let path = std::path::Path::new("output/book1/image3.jpg");
+    let path = std::path::Path::new("output/book1/image4.jpg");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
