@@ -1,36 +1,97 @@
+mod vec3;
+
 use console::style;
 use image::{ImageBuffer, RgbImage};
-use indicatif::ProgressBar;
+// use indicatif::ProgressBar;
 use std::{fs::File, process::exit};
 
+use vec3::unit_vector;
+use vec3::Color;
+use vec3::Point3;
+use vec3::Vec3;
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+struct Position {
+    x: u32,
+    y: u32,
+}
+
+impl Position {
+    fn pos(y: u32, x: u32) -> Position {
+        Position { x, y }
+    }
+}
+
+fn write_color(img: &mut RgbImage, pos: Position, rgb: Color) {
+    let pixel = img.get_pixel_mut(pos.x, pos.y);
+    let r: f64 = rgb.x() * 255.999;
+    let g: f64 = rgb.y() * 255.999;
+    let b: f64 = rgb.z() * 255.999;
+    *pixel = image::Rgb([r as u8, g as u8, b as u8]);
+}
+
+#[derive(Debug, Copy, Clone, PartialEq)]
+struct Ray {
+    orig: Point3,
+    dir: Vec3,
+}
+
+// impl Ray {
+//     fn at(&self, t: f64) -> Point3 {
+//         Point3::new(self.orig.x() + t * self.dir.x(),
+//                     self.orig.y() + t * self.dir.y(),
+//                     self.orig.z() + t * self.dir.z())
+//     }
+// }
+
+impl Ray {
+    fn new(origin: Point3, direction: Vec3) -> Ray {
+        Ray {
+            orig: origin,
+            dir: direction,
+        }
+    }
+}
+
+fn ray_color(r: &Ray) -> Color {
+    let unit_direction = unit_vector(&r.dir);
+    let t = 0.5 * (unit_direction.y() + 1.0);
+    Color::new(1.0, 1.0, 1.0).dot(1.0 - t) + Color::new(0.5, 0.7, 1.0).dot(t)
+}
+
 fn main() {
-    let path = std::path::Path::new("output/book1/image1.jpg");
+    let path = std::path::Path::new("output/book1/image2.jpg");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
-    let width = 256;
-    let height = 256;
+    let aspect_ratio = 16.0 / 9.0;
+    let image_width = 400;
+    let image_height = ((image_width as f64) / aspect_ratio) as u32;
     let quality = 100;
-    let mut img: RgbImage = ImageBuffer::new(width, height);
+    let mut img: RgbImage = ImageBuffer::new(image_width, image_height);
 
-    let progress = if option_env!("CI").unwrap_or_default() == "true" {
-        ProgressBar::hidden()
-    } else {
-        ProgressBar::new((height * width) as u64)
-    };
+    let viewport_height = 2.0;
+    let viewport_width = aspect_ratio * viewport_height;
+    let focal_length = 1.0;
 
-    for j in 0..height {
-        for i in 0..width {
-            let pixel = img.get_pixel_mut(i, height - j - 1);
+    let origin = Point3::new(0.0, 0.0, 0.0);
+    let horizontal = Vec3::new(viewport_width, 0.0, 0.0);
+    let vertical = Vec3::new(0.0, viewport_height, 0.0);
+    let lower_left_corner =
+        origin - horizontal.dot(0.5) - vertical.dot(0.5) - Vec3::new(0.0, 0.0, focal_length);
 
-            let r: f64 = (i as f64) / ((width - 1) as f64) * 255.999;
-            let g: f64 = (j as f64) / ((height - 1) as f64) * 255.999;
-            let b: f64 = 0.25 * 255.999;
-            *pixel = image::Rgb([r as u8, g as u8, b as u8]);
+    for i in 0..image_height {
+        for j in 0..image_width {
+            let u = (j as f64) / ((image_width - 1) as f64);
+            let v = ((image_height - i - 1) as f64) / ((image_height - 1) as f64);
+            let r = Ray::new(
+                origin,
+                lower_left_corner + horizontal.dot(u) + vertical.dot(v) - origin,
+            );
+            let pixel_color = ray_color(&r);
+            write_color(&mut img, Position::pos(i, j), pixel_color);
         }
-        progress.inc(1);
     }
-    progress.finish();
 
     println!(
         "Ouput image as \"{}\"",
