@@ -2,35 +2,35 @@ mod color;
 mod hittable;
 mod hittable_list;
 mod ray;
+mod rtweekend;
 mod sphere;
 mod vec3;
-mod rtweekend;
 
 use console::style;
 use image::{ImageBuffer, RgbImage};
-use std::{fs::File, process::exit};
 use std::rc::Rc;
+use std::{fs::File, process::exit};
 
 use color::write_color;
 use color::Position;
+use hittable::HitRecord;
+use hittable::Hittable;
+use hittable_list::HittableList;
 use ray::Ray;
+use sphere::Sphere;
 use vec3::unit_vector;
 use vec3::Color;
 use vec3::Point3;
 use vec3::Vec3;
-use hittable::Hittable;
-use hittable::HitRecord;
-use hittable_list::HittableList;
-use sphere::Sphere;
 
 fn ray_color(r: Ray, world: &dyn Hittable) -> Color {
     let mut rec: HitRecord = HitRecord::new();
     if world.hit(r, 0.0, f64::INFINITY, &mut rec) {
-        return 0.5 * (rec.normal + Color::new(1.0,1.0,1.0));
+        return 0.5 * (rec.normal + Color::new(1.0, 1.0, 1.0));
     }
     let unit_direction = unit_vector(r.direction());
-    let t = 0.5*(unit_direction.y() + 1.0);
-    (1.0-t)*Color::new(1.0, 1.0, 1.0) + t*Color::new(0.5, 0.7, 1.0)
+    let t = 0.5 * (unit_direction.y() + 1.0);
+    (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
 }
 
 fn main() {
@@ -47,8 +47,8 @@ fn main() {
 
     // World
     let mut world: HittableList = HittableList::new();
-    let a = Sphere::new(Point3::new(0.0,0.0,-1.0), 0.5);
-    let b = Sphere::new(Point3::new(0.0,-100.5,-1.0), 100.0);
+    let a = Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5);
+    let b = Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0);
     world.add(Rc::new(a));
     world.add(Rc::new(b));
 

@@ -30,11 +30,7 @@ impl std::ops::Neg for Vec3 {
 
     fn neg(self) -> Self {
         Self {
-            e: [
-                -self.e[0],
-                -self.e[1],
-                -self.e[2],
-            ],
+            e: [-self.e[0], -self.e[1], -self.e[2]],
         }
     }
 }
