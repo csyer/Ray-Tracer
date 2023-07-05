@@ -1,10 +1,15 @@
 mod color;
+mod hittable;
+mod hittable_list;
 mod ray;
+mod sphere;
 mod vec3;
+mod rtweekend;
 
 use console::style;
 use image::{ImageBuffer, RgbImage};
 use std::{fs::File, process::exit};
+use std::rc::Rc;
 
 use color::write_color;
 use color::Position;
@@ -13,43 +18,41 @@ use vec3::unit_vector;
 use vec3::Color;
 use vec3::Point3;
 use vec3::Vec3;
+use hittable::Hittable;
+use hittable::HitRecord;
+use hittable_list::HittableList;
+use sphere::Sphere;
 
-fn hit_sphere(center: Point3, radius: f64, r: Ray) -> f64 {
-    let oc = r.origin() - center;
-    let a = r.direction() * r.direction();
-    let half_b = oc * r.direction();
-    let c = oc * oc - radius * radius;
-    let discriminant = half_b * half_b - a * c;
-
-    if discriminant < 0.0 {
-        -1.0
-    } else {
-        (-half_b - discriminant.sqrt()) / a
-    }
-}
-
-fn ray_color(r: Ray) -> Color {
-    let t = hit_sphere(Point3::new(0.0, 0.0, -1.0), 0.5, r);
-    if t > 0.0 {
-        let normal = unit_vector(r.at(t) - Vec3::new(0.0, 0.0, -1.0));
-        return 0.5 * Color::new(normal.x() + 1.0, normal.y() + 1.0, normal.z() + 1.0);
+fn ray_color(r: Ray, world: &dyn Hittable) -> Color {
+    let mut rec: HitRecord = HitRecord::new();
+    if world.hit(r, 0.0, f64::INFINITY, &mut rec) {
+        return 0.5 * (rec.normal + Color::new(1.0,1.0,1.0));
     }
     let unit_direction = unit_vector(r.direction());
-    let t = 0.5 * (unit_direction.y() + 1.0);
-    (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
+    let t = 0.5*(unit_direction.y() + 1.0);
+    (1.0-t)*Color::new(1.0, 1.0, 1.0) + t*Color::new(0.5, 0.7, 1.0)
 }
 
 fn main() {
-    let path = std::path::Path::new("output/book1/image4.jpg");
+    let path = std::path::Path::new("output/book1/image5.jpg");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
+    // Image
     let aspect_ratio = 16.0 / 9.0;
     let image_width = 400;
     let image_height = ((image_width as f64) / aspect_ratio) as u32;
     let quality = 100;
     let mut img: RgbImage = ImageBuffer::new(image_width, image_height);
 
+    // World
+    let mut world: HittableList = HittableList::new();
+    let a = Sphere::new(Point3::new(0.0,0.0,-1.0), 0.5);
+    let b = Sphere::new(Point3::new(0.0,-100.5,-1.0), 100.0);
+    world.add(Rc::new(a));
+    world.add(Rc::new(b));
+
+    // Camera
     let viewport_height = 2.0;
     let viewport_width = aspect_ratio * viewport_height;
     let focal_length = 1.0;
@@ -68,7 +71,7 @@ fn main() {
                 origin,
                 lower_left_corner + u * horizontal + v * vertical - origin,
             );
-            let pixel_color = ray_color(r);
+            let pixel_color = ray_color(r, &world);
             write_color(&mut img, Position::pos(i, j), pixel_color);
         }
     }
