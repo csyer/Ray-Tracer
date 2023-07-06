@@ -133,3 +133,7 @@ pub fn random_in_unit_sphere() -> Vec3 {
     let u: f64 = rand::thread_rng().gen_range(0.0..=1.0);
     p * u.cbrt()
 }
+
+pub fn random_unit_vector() -> Vec3 {
+    unit_vector(random_in_unit_sphere())
+}

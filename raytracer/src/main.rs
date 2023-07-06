@@ -14,13 +14,11 @@ use std::rc::Rc;
 use std::{fs::File, process::exit};
 
 use camera::Camera;
-use color::write_color;
 use color::Position;
 use hittable::HitRecord;
 use hittable::Hittable;
 use hittable_list::HittableList;
 use ray::Ray;
-use rtweekend::random_double;
 use sphere::Sphere;
 use vec3::Color;
 use vec3::Point3;
@@ -31,7 +29,7 @@ fn ray_color(r: Ray, world: &dyn Hittable, depth: i32) -> Color {
         return Color::new(0.0, 0.0, 0.0);
     }
     if world.hit(r, 0.001, f64::INFINITY, &mut rec) {
-        let target = rec.p + rec.normal + vec3::random_in_unit_sphere();
+        let target = rec.p + rec.normal + vec3::random_unit_vector();
         return 0.5 * ray_color(Ray::new(rec.p, target - rec.p), world, depth - 1);
     }
     let unit_direction = vec3::unit_vector(r.direction());
@@ -40,7 +38,7 @@ fn ray_color(r: Ray, world: &dyn Hittable, depth: i32) -> Color {
 }
 
 fn main() {
-    let path = std::path::Path::new("output/book1/image8.jpg");
+    let path = std::path::Path::new("output/book1/image9.jpg");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -76,14 +74,14 @@ fn main() {
             let mut pixel_color = Color::new(0.0, 0.0, 0.0);
             let mut s = 0;
             while s < samples_per_pixel {
-                let u = ((i as f64) + random_double()) / ((image_width - 1) as f64);
-                let v = (((image_height - j - 1) as f64) + random_double())
+                let u = ((i as f64) + rtweekend::random_double()) / ((image_width - 1) as f64);
+                let v = (((image_height - j - 1) as f64) + rtweekend::random_double())
                     / ((image_height - 1) as f64);
                 let r = cam.get_ray(u, v);
                 pixel_color += ray_color(r, &world, max_depth);
                 s += 1;
             }
-            write_color(
+            color::write_color(
                 &mut img,
                 Position::pos(j, i),
                 pixel_color,
