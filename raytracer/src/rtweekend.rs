@@ -1,4 +1,4 @@
-use rand::Rng;
+use rand::prelude::*;
 
 // pub const pi: f64 = 3.1415926535897932385;
 

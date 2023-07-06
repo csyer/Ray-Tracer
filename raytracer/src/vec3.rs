@@ -1,3 +1,6 @@
+use rand::prelude::*;
+use rand_distr::{Distribution, Normal};
+
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Vec3 {
     e: [f64; 3],
@@ -46,6 +49,17 @@ impl std::ops::Add for Vec3 {
                 self.e[2] + other.e[2],
             ],
         }
+    }
+}
+impl std::ops::AddAssign for Vec3 {
+    fn add_assign(&mut self, other: Self) {
+        *self = Self {
+            e: [
+                self.e[0] + other.e[0],
+                self.e[1] + other.e[1],
+                self.e[2] + other.e[2],
+            ],
+        };
     }
 }
 
@@ -105,3 +119,17 @@ pub fn unit_vector(vec: Vec3) -> Vec3 {
 
 pub type Point3 = Vec3;
 pub type Color = Vec3;
+
+pub fn random_in_unit_sphere() -> Vec3 {
+    let normal: Normal<f64> = Normal::new(0.0, 1.0).unwrap();
+    let p = Vec3 {
+        e: [
+            normal.sample(&mut rand::thread_rng()),
+            normal.sample(&mut rand::thread_rng()),
+            normal.sample(&mut rand::thread_rng()),
+        ],
+    };
+    let p = unit_vector(p);
+    let u: f64 = rand::thread_rng().gen_range(0.0..=1.0);
+    p * u.cbrt()
+}

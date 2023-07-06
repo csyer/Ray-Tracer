@@ -22,22 +22,25 @@ use hittable_list::HittableList;
 use ray::Ray;
 use rtweekend::random_double;
 use sphere::Sphere;
-use vec3::unit_vector;
 use vec3::Color;
 use vec3::Point3;
 
-fn ray_color(r: Ray, world: &dyn Hittable) -> Color {
+fn ray_color(r: Ray, world: &dyn Hittable, depth: i32) -> Color {
     let mut rec: HitRecord = HitRecord::new();
-    if world.hit(r, 0.0, f64::INFINITY, &mut rec) {
-        return 0.5 * (rec.normal + Color::new(1.0, 1.0, 1.0));
+    if depth <= 0 {
+        return Color::new(0.0, 0.0, 0.0);
     }
-    let unit_direction = unit_vector(r.direction());
+    if world.hit(r, 0.001, f64::INFINITY, &mut rec) {
+        let target = rec.p + rec.normal + vec3::random_in_unit_sphere();
+        return 0.5 * ray_color(Ray::new(rec.p, target - rec.p), world, depth - 1);
+    }
+    let unit_direction = vec3::unit_vector(r.direction());
     let t = 0.5 * (unit_direction.y() + 1.0);
     (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
 }
 
 fn main() {
-    let path = std::path::Path::new("output/book1/image6.jpg");
+    let path = std::path::Path::new("output/book1/image7.jpg");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -46,6 +49,8 @@ fn main() {
     let image_width = 400;
     let image_height = ((image_width as f64) / aspect_ratio) as u32;
     let samples_per_pixel = 100;
+    let max_depth = 50;
+
     let quality = 100;
     let mut img: RgbImage = ImageBuffer::new(image_width, image_height);
 
@@ -75,7 +80,7 @@ fn main() {
                 let v = (((image_height - j - 1) as f64) + random_double())
                     / ((image_height - 1) as f64);
                 let r = cam.get_ray(u, v);
-                pixel_color = pixel_color + ray_color(r, &world);
+                pixel_color += ray_color(r, &world, max_depth);
                 s += 1;
             }
             write_color(
