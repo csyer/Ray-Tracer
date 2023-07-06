@@ -2,6 +2,7 @@ mod camera;
 mod color;
 mod hittable;
 mod hittable_list;
+mod material;
 mod ray;
 mod rtweekend;
 mod sphere;
@@ -18,19 +19,26 @@ use color::Position;
 use hittable::HitRecord;
 use hittable::Hittable;
 use hittable_list::HittableList;
+use material::*;
 use ray::Ray;
 use sphere::Sphere;
 use vec3::Color;
 use vec3::Point3;
 
 fn ray_color(r: Ray, world: &dyn Hittable, depth: i32) -> Color {
-    let mut rec: HitRecord = HitRecord::new();
+    let mut rec: HitRecord = HitRecord::default();
     if depth <= 0 {
         return Color::new(0.0, 0.0, 0.0);
     }
-    if world.hit(r, 0.001, f64::INFINITY, &mut rec) {
-        let target = rec.p + vec3::random_in_hemisphere(rec.normal);
-        return 0.5 * ray_color(Ray::new(rec.p, target - rec.p), world, depth - 1);
+    let hit_thing = world.hit(r, 0.001, f64::INFINITY, &mut rec);
+    if hit_thing.is_some() {
+        let mut scattered: Ray = Ray::default();
+        let mut attenuation: Color = Color::default();
+        let opt = hit_thing.clone().unwrap();
+        if opt.scatter(r, &rec, &mut attenuation, &mut scattered) {
+            return attenuation * ray_color(scattered, world, depth - 1);
+        }
+        return Color::new(0.0, 0.0, 0.0);
     }
     let unit_direction = vec3::unit_vector(r.direction());
     let t = 0.5 * (unit_direction.y() + 1.0);
@@ -38,7 +46,7 @@ fn ray_color(r: Ray, world: &dyn Hittable, depth: i32) -> Color {
 }
 
 fn main() {
-    let path = std::path::Path::new("output/book1/image10.jpg");
+    let path = std::path::Path::new("output/book1/image11.jpg");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -61,10 +69,39 @@ fn main() {
 
     // World
     let mut world: HittableList = HittableList::new();
-    let a = Sphere::new(Point3::new(0.0, 0.0, -1.0), 0.5);
-    let b = Sphere::new(Point3::new(0.0, -100.5, -1.0), 100.0);
-    world.add(Rc::new(a));
-    world.add(Rc::new(b));
+
+    let material_ground_mat = Lambertian::new(Color::new(0.8, 0.8, 0.0));
+    let material_ground = Sphere::new(
+        Point3::new(0.0, -100.5, -1.0),
+        100.0,
+        Rc::new(material_ground_mat),
+    );
+
+    let material_center_mat = Lambertian::new(Color::new(0.7, 0.3, 0.3));
+    let material_center = Sphere::new(
+        Point3::new(0.0, 0.0, -1.0),
+        0.5,
+        Rc::new(material_center_mat),
+    );
+
+    let material_left_mat = Metal::new(Color::new(0.8, 0.8, 0.8));
+    let material_left = Sphere::new(
+        Point3::new(-1.0, 0.0, -1.0),
+        0.5,
+        Rc::new(material_left_mat),
+    );
+
+    let material_right_mat = Metal::new(Color::new(0.8, 0.6, 0.2));
+    let material_right = Sphere::new(
+        Point3::new(1.0, 0.0, -1.0),
+        0.5,
+        Rc::new(material_right_mat),
+    );
+
+    world.add(Rc::new(material_ground));
+    world.add(Rc::new(material_center));
+    world.add(Rc::new(material_left));
+    world.add(Rc::new(material_right));
 
     // Camera
     let cam: Camera = Camera::new();

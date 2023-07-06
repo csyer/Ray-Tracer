@@ -20,11 +20,21 @@ impl Vec3 {
     pub fn length(&self) -> f64 {
         (self.e[0] * self.e[0] + self.e[1] * self.e[1] + self.e[2] * self.e[2]).sqrt()
     }
+    pub fn near_zero(&self) -> bool {
+        // Return true if the vector is close to zero in all dimensions.
+        let s = 1e-8;
+        (self.e[0].abs() < s) && (self.e[1].abs() < s) && (self.e[2].abs() < s)
+    }
 }
 
 impl Vec3 {
     pub fn new(x: f64, y: f64, z: f64) -> Vec3 {
         Vec3 { e: [x, y, z] }
+    }
+}
+impl Default for Vec3 {
+    fn default() -> Self {
+        Self { e: [0.0, 0.0, 0.0] }
     }
 }
 
@@ -78,10 +88,16 @@ impl std::ops::Sub for Vec3 {
 }
 
 impl std::ops::Mul for Vec3 {
-    type Output = f64;
+    type Output = Vec3;
 
-    fn mul(self, other: Self) -> f64 {
-        self.e[0] * other.e[0] + self.e[1] * other.e[1] + self.e[2] * other.e[2]
+    fn mul(self, other: Self) -> Vec3 {
+        Vec3 {
+            e: [
+                self.e[0] * other.e[0],
+                self.e[1] * other.e[1],
+                self.e[2] * other.e[2],
+            ],
+        }
     }
 }
 impl std::ops::Mul<f64> for Vec3 {
@@ -101,6 +117,9 @@ impl std::ops::Mul<Vec3> for f64 {
             e: [t.x() * self, t.y() * self, t.z() * self],
         }
     }
+}
+pub fn dot(lhs: Vec3, rhs: Vec3) -> f64 {
+    lhs.e[0] * rhs.e[0] + lhs.e[1] * rhs.e[1] + lhs.e[2] * rhs.e[2]
 }
 
 impl std::ops::Div<f64> for Vec3 {
@@ -134,16 +153,20 @@ pub fn random_in_unit_sphere() -> Vec3 {
     p * u.cbrt()
 }
 
-// pub fn random_unit_vector() -> Vec3 {
-//     unit_vector(random_in_unit_sphere())
+pub fn random_unit_vector() -> Vec3 {
+    unit_vector(random_in_unit_sphere())
+}
+
+// pub fn random_in_hemisphere(normal: Vec3) -> Vec3 {
+//     let in_unit_sphere = random_in_unit_sphere();
+//     if dot(in_unit_sphere, normal) > 0.0 {
+//         // In the same hemisphere as the normal
+//         in_unit_sphere
+//     } else {
+//         -in_unit_sphere
+//     }
 // }
 
-pub fn random_in_hemisphere(normal: Vec3) -> Vec3 {
-    let in_unit_sphere = random_in_unit_sphere();
-    if (in_unit_sphere * normal) > 0.0 {
-        // In the same hemisphere as the normal
-        in_unit_sphere
-    } else {
-        -in_unit_sphere
-    }
+pub fn reflect(v: Vec3, n: Vec3) -> Vec3 {
+    v - 2.0 * dot(v, n) * n
 }
