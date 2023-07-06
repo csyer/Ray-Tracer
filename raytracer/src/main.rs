@@ -46,7 +46,7 @@ fn ray_color(r: Ray, world: &dyn Hittable, depth: i32) -> Color {
 }
 
 fn main() {
-    let path = std::path::Path::new("output/book1/image15.jpg");
+    let path = std::path::Path::new("output/book1/image16.jpg");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -76,6 +76,7 @@ fn main() {
         100.0,
         Rc::new(material_ground_mat),
     );
+    world.add(Rc::new(material_ground));
 
     let material_center_mat = Lambertian::new(Color::new(0.1, 0.2, 0.5));
     let material_center = Sphere::new(
@@ -83,6 +84,7 @@ fn main() {
         0.5,
         Rc::new(material_center_mat),
     );
+    world.add(Rc::new(material_center));
 
     let material_left_mat = Dielectric::new(1.5);
     let material_left = Sphere::new(
@@ -90,6 +92,14 @@ fn main() {
         0.5,
         Rc::new(material_left_mat),
     );
+    world.add(Rc::new(material_left));
+    let material_left_mat = Dielectric::new(1.5);
+    let material_left = Sphere::new(
+        Point3::new(-1.0, 0.0, -1.0),
+        -0.4,
+        Rc::new(material_left_mat),
+    );
+    world.add(Rc::new(material_left));
 
     let material_right_mat = Metal::new(Color::new(0.8, 0.6, 0.2), 0.0);
     let material_right = Sphere::new(
@@ -97,10 +107,6 @@ fn main() {
         0.5,
         Rc::new(material_right_mat),
     );
-
-    world.add(Rc::new(material_ground));
-    world.add(Rc::new(material_center));
-    world.add(Rc::new(material_left));
     world.add(Rc::new(material_right));
 
     // Camera
