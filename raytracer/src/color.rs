@@ -22,9 +22,9 @@ pub fn write_color(img: &mut RgbImage, pos: Position, rgb: Color, samples_per_pi
     let mut b: f64 = rgb.z();
 
     let scale = 1.0 / (samples_per_pixel as f64);
-    r *= scale;
-    g *= scale;
-    b *= scale;
+    r = (r * scale).sqrt();
+    g = (g * scale).sqrt();
+    b = (b * scale).sqrt();
 
     *pixel = image::Rgb([
         (256.0 * clamp(r, 0.0, 0.999)) as u8,
