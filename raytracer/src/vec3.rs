@@ -148,6 +148,26 @@ pub fn unit_vector(vec: Vec3) -> Vec3 {
 pub type Point3 = Vec3;
 pub type Color = Vec3;
 
+impl Vec3 {
+    pub fn random() -> Vec3 {
+        Vec3 {
+            e: [
+                rand::thread_rng().gen_range(0.0..=1.0),
+                rand::thread_rng().gen_range(0.0..=1.0),
+                rand::thread_rng().gen_range(0.0..=1.0),
+            ],
+        }
+    }
+    pub fn random_range(min: f64, max: f64) -> Vec3 {
+        Vec3 {
+            e: [
+                rand::thread_rng().gen_range(min..=max),
+                rand::thread_rng().gen_range(min..=max),
+                rand::thread_rng().gen_range(min..=max),
+            ],
+        }
+    }
+}
 pub fn random_in_unit_sphere() -> Vec3 {
     let normal: Normal<f64> = Normal::new(0.0, 1.0).unwrap();
     let p = Vec3 {
