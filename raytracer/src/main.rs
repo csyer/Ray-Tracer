@@ -12,6 +12,7 @@ use console::style;
 use image::{ImageBuffer, RgbImage};
 use indicatif::ProgressBar;
 use std::rc::Rc;
+// use std::thread;
 use std::{fs::File, process::exit};
 
 use camera::Camera;
@@ -26,7 +27,7 @@ use sphere::Sphere;
 use vec3::Color;
 use vec3::Point3;
 
-fn ray_color(r: Ray, world: &dyn Hittable, depth: i32) -> Color {
+fn ray_color(r: &Ray, world: &dyn Hittable, depth: i32) -> Color {
     let mut rec: HitRecord = HitRecord::default();
     if depth <= 0 {
         return Color::new(0.0, 0.0, 0.0);
@@ -37,7 +38,7 @@ fn ray_color(r: Ray, world: &dyn Hittable, depth: i32) -> Color {
         let mut attenuation: Color = Color::default();
         let opt = hit_thing.clone().unwrap();
         if opt.scatter(r, &rec, &mut attenuation, &mut scattered) {
-            return attenuation * ray_color(scattered, world, depth - 1);
+            return attenuation * ray_color(&scattered, world, depth - 1);
         }
         return Color::new(0.0, 0.0, 0.0);
     }
@@ -56,7 +57,7 @@ fn random_scene() -> HittableList {
         ground_material,
     )));
 
-    for a in -11..=11 {
+    for a in -11..11 {
         for b in -11..11 {
             let choose_mat = random_double();
             let center = Point3::new(
@@ -112,7 +113,7 @@ fn random_scene() -> HittableList {
 }
 
 fn main() {
-    let path = std::path::Path::new("output/book1/image21.jpg");
+    let path = std::path::Path::new("output/book1/image22.jpg");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -153,6 +154,7 @@ fn main() {
         dist_to_focus,
     );
 
+    // let handle1 = thread::spawn(move || {
     for j in 0..image_height {
         for i in 0..image_width {
             let mut pixel_color = Color::new(0.0, 0.0, 0.0);
@@ -162,7 +164,7 @@ fn main() {
                 let v = (((image_height - j - 1) as f64) + rtweekend::random_double())
                     / ((image_height - 1) as f64);
                 let r = cam.get_ray(u, v);
-                pixel_color += ray_color(r, &world, max_depth);
+                pixel_color += ray_color(&r, &world, max_depth);
                 s += 1;
             }
             color::write_color(
@@ -174,6 +176,7 @@ fn main() {
             progress.inc(1);
         }
     }
+    // });
     progress.finish();
 
     println!(

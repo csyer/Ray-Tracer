@@ -23,7 +23,13 @@ impl HittableList {
 }
 
 impl Hittable for HittableList {
-    fn hit(&self, r: Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> Option<Rc<dyn Material>> {
+    fn hit(
+        &self,
+        r: &Ray,
+        t_min: f64,
+        t_max: f64,
+        rec: &mut HitRecord,
+    ) -> Option<Rc<dyn Material>> {
         let mut temp_rec: HitRecord = HitRecord::default();
         let mut hit_anything: Option<Rc<dyn Material>> = None;
         let mut closest_so_far = t_max;

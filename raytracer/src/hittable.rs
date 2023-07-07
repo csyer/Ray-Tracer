@@ -13,7 +13,7 @@ pub struct HitRecord {
 }
 
 impl HitRecord {
-    pub fn set_face_normal(&mut self, r: Ray, outward_normal: Vec3) {
+    pub fn set_face_normal(&mut self, r: &Ray, outward_normal: Vec3) {
         self.front_face = dot(r.direction(), outward_normal) < 0.0;
         self.normal = {
             if self.front_face {
@@ -36,5 +36,6 @@ impl Default for HitRecord {
 }
 
 pub trait Hittable {
-    fn hit(&self, r: Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> Option<Rc<dyn Material>>;
+    fn hit(&self, r: &Ray, t_min: f64, t_max: f64, rec: &mut HitRecord)
+        -> Option<Rc<dyn Material>>;
 }
