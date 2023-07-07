@@ -3,6 +3,7 @@ mod color;
 mod hittable;
 mod hittable_list;
 mod material;
+mod moving_shpere;
 mod ray;
 mod rtweekend;
 mod sphere;
@@ -16,17 +17,16 @@ use std::sync::{mpsc, Arc};
 use std::thread::{self, JoinHandle};
 use std::{fs::File, process::exit};
 
-use camera::Camera;
-use color::Position;
-use hittable::HitRecord;
-use hittable::Hittable;
-use hittable_list::HittableList;
+use camera::*;
+use color::*;
+use hittable::*;
+use hittable_list::*;
 use material::*;
-use ray::Ray;
+use moving_shpere::*;
+use ray::*;
 use rtweekend::*;
-use sphere::Sphere;
-use vec3::Color;
-use vec3::Point3;
+use sphere::*;
+use vec3::*;
 
 fn ray_color(r: &Ray, world: &dyn Hittable, depth: i32) -> Color {
     let mut rec: HitRecord = HitRecord::default();
@@ -76,7 +76,15 @@ fn random_scene() -> HittableList {
                     // diffuse
                     let albedo = Color::random() * Color::random();
                     let sphere_material = Arc::new(Lambertian::new(albedo));
-                    world.add(Arc::new(Sphere::new(center, 0.2, sphere_material)));
+                    let center2 = center + Vec3::new(0.0, random_double_range(0.0, 0.5), 0.0);
+                    world.add(Arc::new(MovingSphere::new(
+                        center,
+                        center2,
+                        0.1,
+                        1.0,
+                        0.2,
+                        sphere_material,
+                    )));
                 } else if choose_mat < 0.95 {
                     // metal
                     let albedo = Color::random_range(0.5, 1.0);
@@ -117,15 +125,15 @@ fn random_scene() -> HittableList {
 }
 
 fn main() {
-    let path = std::path::Path::new("output/book1/image21.jpg");
+    let path = std::path::Path::new("output/book2/image1.jpg");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
     // Image
-    let aspect_ratio = 3.0 / 2.0;
-    let image_width = 1200;
+    let aspect_ratio = 16.0 / 9.0;
+    let image_width = 400;
     let image_height = ((image_width as f64) / aspect_ratio) as u32;
-    let samples_per_pixel = 500;
+    let samples_per_pixel = 100;
     let max_depth = 50;
 
     let quality = 100;
@@ -152,7 +160,7 @@ fn main() {
     );
 
     // Draw
-    const THREAD_NUM: usize = 10;
+    const THREAD_NUM: usize = 20;
     let row_per_thread = image_height / (THREAD_NUM as u32);
     let mut threads: Vec<JoinHandle<()>> = Vec::new();
     let mut recv: Vec<_> = Vec::new();
@@ -186,7 +194,7 @@ fn main() {
                         / ((image_width - 1) as f64);
                     let v = (((image_height - pixel.y - 1) as f64) + rtweekend::random_double())
                         / ((image_height - 1) as f64);
-                    let r = _cam.get_ray(u, v);
+                    let r = _cam.get_ray(u, v, 0.0, 1.0);
                     pixel_color += ray_color(&r, &_world, max_depth);
                     s += 1;
                 }
@@ -198,7 +206,7 @@ fn main() {
         });
         threads.push(handle);
     }
-    multi_progress.join().unwrap();
+    multi_progress.join_and_clear().unwrap();
 
     for receiver in recv.iter().take(THREAD_NUM) {
         let received = receiver.recv().unwrap();
