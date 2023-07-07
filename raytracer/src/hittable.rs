@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use crate::aabb::*;
 use crate::material::Material;
 use crate::ray::Ray;
 use crate::vec3::*;
@@ -9,6 +10,8 @@ pub struct HitRecord {
     pub p: Point3,
     pub normal: Vec3,
     pub t: f64,
+    pub u: f64,
+    pub v: f64,
     pub front_face: bool,
 }
 
@@ -30,6 +33,8 @@ impl Default for HitRecord {
             p: Point3::new(0.0, 0.0, 0.0),
             normal: Vec3::new(0.0, 0.0, 0.0),
             t: 0.0,
+            u: 0.0,
+            v: 0.0,
             front_face: true,
         }
     }
@@ -43,4 +48,5 @@ pub trait Hittable: Send + Sync {
         t_max: f64,
         rec: &mut HitRecord,
     ) -> Option<Arc<dyn Material>>;
+    fn bounding_box(&self, time0: f64, time1: f64, output_box: &mut Aabb) -> bool;
 }

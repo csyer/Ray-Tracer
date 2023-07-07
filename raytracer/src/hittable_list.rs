@@ -1,8 +1,9 @@
-use crate::hittable::HitRecord;
-use crate::hittable::Hittable;
+use std::sync::Arc;
+
+use crate::aabb::*;
+use crate::hittable::*;
 use crate::material::Material;
 use crate::ray::Ray;
-use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct HittableList {
@@ -44,5 +45,30 @@ impl Hittable for HittableList {
         }
 
         hit_anything
+    }
+
+    fn bounding_box(&self, time0: f64, time1: f64, output_box: &mut crate::aabb::Aabb) -> bool {
+        if self.objects.is_empty() {
+            return false;
+        }
+
+        let mut temp_box = Aabb::default();
+        let mut first_box = true;
+
+        for object in &self.objects {
+            if !object.bounding_box(time0, time1, &mut temp_box) {
+                return false;
+            }
+            *output_box = {
+                if first_box {
+                    temp_box
+                } else {
+                    surrounding_box(output_box, &temp_box)
+                }
+            };
+            first_box = false;
+        }
+
+        true
     }
 }

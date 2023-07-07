@@ -1,6 +1,9 @@
+use std::sync::Arc;
+
 use crate::hittable::HitRecord;
 use crate::ray::Ray;
 use crate::rtweekend::random_double;
+use crate::texture::*;
 use crate::vec3::*;
 
 pub trait Material: Send + Sync {
@@ -13,12 +16,31 @@ pub trait Material: Send + Sync {
     ) -> bool;
 }
 
+#[derive(Default)]
+pub struct Empty {}
+impl Material for Empty {
+    fn scatter(
+        &self,
+        _r_in: &Ray,
+        _rec: &HitRecord,
+        _attenuation: &mut Color,
+        _scattered: &mut Ray,
+    ) -> bool {
+        true
+    }
+}
+
 pub struct Lambertian {
-    albedo: Color,
+    albedo: Arc<dyn Texture>,
 }
 
 impl Lambertian {
     pub fn new(a: Color) -> Lambertian {
+        Lambertian {
+            albedo: Arc::new(SolidColor::new(a)),
+        }
+    }
+    pub fn mv(a: Arc<dyn Texture>) -> Lambertian {
         Lambertian { albedo: a }
     }
 }
@@ -39,7 +61,7 @@ impl Material for Lambertian {
         }
 
         *scattered = Ray::new(rec.p, scatter_direction, r_in.time());
-        *attenuation = self.albedo;
+        *attenuation = self.albedo.value(rec.u, rec.v, rec.p);
         true
     }
 }
