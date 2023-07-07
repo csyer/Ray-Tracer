@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::material::Material;
 use crate::ray::Ray;
@@ -35,7 +35,12 @@ impl Default for HitRecord {
     }
 }
 
-pub trait Hittable {
-    fn hit(&self, r: &Ray, t_min: f64, t_max: f64, rec: &mut HitRecord)
-        -> Option<Rc<dyn Material>>;
+pub trait Hittable: Send + Sync {
+    fn hit(
+        &self,
+        r: &Ray,
+        t_min: f64,
+        t_max: f64,
+        rec: &mut HitRecord,
+    ) -> Option<Arc<dyn Material>>;
 }

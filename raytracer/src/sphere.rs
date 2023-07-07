@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::hittable::HitRecord;
 use crate::hittable::Hittable;
@@ -9,11 +9,11 @@ use crate::vec3::*;
 pub struct Sphere {
     center: Point3,
     radius: f64,
-    mat_ptr: Option<Rc<dyn Material>>,
+    mat_ptr: Option<Arc<dyn Material>>,
 }
 
 impl Sphere {
-    pub fn new(cen: Point3, r: f64, m: Rc<dyn Material>) -> Sphere {
+    pub fn new(cen: Point3, r: f64, m: Arc<dyn Material>) -> Sphere {
         Sphere {
             center: cen,
             radius: r,
@@ -29,7 +29,7 @@ impl Hittable for Sphere {
         t_min: f64,
         t_max: f64,
         rec: &mut HitRecord,
-    ) -> Option<Rc<dyn Material>> {
+    ) -> Option<Arc<dyn Material>> {
         let oc = r.origin() - self.center;
         let a = dot(r.direction(), r.direction());
         let half_b = dot(oc, r.direction());

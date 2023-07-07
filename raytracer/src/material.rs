@@ -3,7 +3,7 @@ use crate::ray::Ray;
 use crate::rtweekend::random_double;
 use crate::vec3::*;
 
-pub trait Material {
+pub trait Material: Send + Sync {
     fn scatter(
         &self,
         r_in: &Ray,

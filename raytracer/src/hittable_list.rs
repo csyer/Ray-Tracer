@@ -2,10 +2,11 @@ use crate::hittable::HitRecord;
 use crate::hittable::Hittable;
 use crate::material::Material;
 use crate::ray::Ray;
-use std::rc::Rc;
+use std::sync::Arc;
 
+#[derive(Clone)]
 pub struct HittableList {
-    objects: Vec<Rc<dyn Hittable>>,
+    objects: Vec<Arc<dyn Hittable>>,
 }
 
 impl HittableList {
@@ -17,7 +18,7 @@ impl HittableList {
 }
 
 impl HittableList {
-    pub fn add(&mut self, object: Rc<dyn Hittable>) {
+    pub fn add(&mut self, object: Arc<dyn Hittable>) {
         self.objects.push(object);
     }
 }
@@ -29,15 +30,14 @@ impl Hittable for HittableList {
         t_min: f64,
         t_max: f64,
         rec: &mut HitRecord,
-    ) -> Option<Rc<dyn Material>> {
+    ) -> Option<Arc<dyn Material>> {
         let mut temp_rec: HitRecord = HitRecord::default();
-        let mut hit_anything: Option<Rc<dyn Material>> = None;
+        let mut hit_anything: Option<Arc<dyn Material>> = None;
         let mut closest_so_far = t_max;
 
         for object in &self.objects {
-            let opt = object.hit(r, t_min, closest_so_far, &mut temp_rec).clone();
-            if opt.is_some() {
-                hit_anything = opt.clone();
+            if let Some(opt) = object.hit(r, t_min, closest_so_far, &mut temp_rec) {
+                hit_anything = Some(Arc::clone(&opt));
                 closest_so_far = temp_rec.t;
                 *rec = temp_rec;
             }
