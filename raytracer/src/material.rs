@@ -49,20 +49,20 @@ pub struct Metal {
     fuzz: f64,
 }
 
-impl Metal {
-    pub fn new(a: Color, f: f64) -> Metal {
-        Metal {
-            albedo: a,
-            fuzz: {
-                if f < 1.0 {
-                    f
-                } else {
-                    1.0
-                }
-            },
-        }
-    }
-}
+// impl Metal {
+//     pub fn new(a: Color, f: f64) -> Metal {
+//         Metal {
+//             albedo: a,
+//             fuzz: {
+//                 if f < 1.0 {
+//                     f
+//                 } else {
+//                     1.0
+//                 }
+//             },
+//         }
+//     }
+// }
 
 impl Material for Metal {
     fn scatter(
@@ -83,13 +83,13 @@ pub struct Dielectric {
     ir: f64,
 }
 
-impl Dielectric {
-    pub fn new(index_of_refraction: f64) -> Dielectric {
-        Dielectric {
-            ir: index_of_refraction,
-        }
-    }
-}
+// impl Dielectric {
+//     pub fn new(index_of_refraction: f64) -> Dielectric {
+//         Dielectric {
+//             ir: index_of_refraction,
+//         }
+//     }
+// }
 
 fn reflectance(cosine: f64, ref_idx: f64) -> f64 {
     // Use Schlick's approximation for reflectance.
