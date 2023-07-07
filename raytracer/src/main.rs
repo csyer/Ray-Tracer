@@ -46,7 +46,7 @@ fn ray_color(r: Ray, world: &dyn Hittable, depth: i32) -> Color {
 }
 
 fn main() {
-    let path = std::path::Path::new("output/book1/image17.jpg");
+    let path = std::path::Path::new("output/book1/image18.jpg");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -68,44 +68,49 @@ fn main() {
     };
 
     // World
-    let r = (std::f64::consts::PI / 4.0).cos();
     let mut world: HittableList = HittableList::new();
 
-    // let material_ground = Rc::new(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
-    // world.add(Rc::new(Sphere::new(
-    //     Point3::new(0.0, -100.5, -1.0),
-    //     100.0,
-    //     material_ground.clone(),
-    // )));
-
-    // let material_center = Rc::new(Lambertian::new(Color::new(0.1, 0.2, 0.5)));
-    // world.add(Rc::new(Sphere::new(
-    //     Point3::new(0.0, 0.0, -1.0),
-    //     0.5,
-    //     material_center.clone(),
-    // )));
-
-    let material_left = Rc::new(Lambertian::new(Color::new(0.0, 0.0, 1.0)));
+    let material_ground = Rc::new(Lambertian::new(Color::new(0.8, 0.8, 0.0)));
     world.add(Rc::new(Sphere::new(
-        Point3::new(-r, 0.0, -1.0),
-        r,
+        Point3::new(0.0, -100.5, -1.0),
+        100.0,
+        material_ground,
+    )));
+
+    let material_center = Rc::new(Lambertian::new(Color::new(0.1, 0.2, 0.5)));
+    world.add(Rc::new(Sphere::new(
+        Point3::new(0.0, 0.0, -1.0),
+        0.5,
+        material_center,
+    )));
+
+    let material_left = Rc::new(Dielectric::new(1.5));
+    world.add(Rc::new(Sphere::new(
+        Point3::new(-1.0, 0.0, -1.0),
+        0.5,
+        material_left.clone(),
+    )));
+    world.add(Rc::new(Sphere::new(
+        Point3::new(-1.0, 0.0, -1.0),
+        -0.45,
         material_left,
     )));
-    // world.add(Rc::new(Sphere::new(
-    //     Point3::new(-1.0, 0.0, -1.0),
-    //     -0.4,
-    //     material_left.clone(),
-    // )));
 
-    let material_right = Rc::new(Lambertian::new(Color::new(1.0, 0.0, 0.0)));
+    let material_right = Rc::new(Metal::new(Color::new(0.8, 0.6, 0.2), 0.0));
     world.add(Rc::new(Sphere::new(
-        Point3::new(r, 0.0, -1.0),
-        r,
+        Point3::new(1.0, 0.0, -1.0),
+        0.5,
         material_right,
     )));
 
     // Camera
-    let cam: Camera = Camera::new(90.0, aspect_ratio);
+    let cam: Camera = Camera::new(
+        Point3::new(-2.0, 2.0, 1.0),
+        Point3::new(0.0, 0.0, -1.0),
+        Point3::new(0.0, 1.0, 0.0),
+        90.0,
+        aspect_ratio,
+    );
 
     for j in 0..image_height {
         for i in 0..image_width {

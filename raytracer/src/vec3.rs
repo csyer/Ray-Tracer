@@ -121,6 +121,15 @@ impl std::ops::Mul<Vec3> for f64 {
 pub fn dot(lhs: Vec3, rhs: Vec3) -> f64 {
     lhs.e[0] * rhs.e[0] + lhs.e[1] * rhs.e[1] + lhs.e[2] * rhs.e[2]
 }
+pub fn cross(lhs: Vec3, rhs: Vec3) -> Vec3 {
+    Vec3 {
+        e: [
+            lhs.e[1] * rhs.e[2] - lhs.e[2] * rhs.e[1],
+            lhs.e[2] * rhs.e[0] - lhs.e[0] * rhs.e[2],
+            lhs.e[0] * rhs.e[1] - lhs.e[1] * rhs.e[0],
+        ],
+    }
+}
 
 impl std::ops::Div<f64> for Vec3 {
     type Output = Vec3;
