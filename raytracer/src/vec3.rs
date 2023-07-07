@@ -166,16 +166,19 @@ pub fn random_unit_vector() -> Vec3 {
     unit_vector(random_in_unit_sphere())
 }
 
-// pub fn random_in_hemisphere(normal: Vec3) -> Vec3 {
-//     let in_unit_sphere = random_in_unit_sphere();
-//     if dot(in_unit_sphere, normal) > 0.0 {
-//         // In the same hemisphere as the normal
-//         in_unit_sphere
-//     } else {
-//         -in_unit_sphere
-//     }
-// }
-
+pub fn random_in_unit_disk() -> Vec3 {
+    let normal: Normal<f64> = Normal::new(0.0, 1.0).unwrap();
+    let p = Vec3 {
+        e: [
+            normal.sample(&mut rand::thread_rng()),
+            normal.sample(&mut rand::thread_rng()),
+            0.0,
+        ],
+    };
+    let p = unit_vector(p);
+    let u: f64 = rand::thread_rng().gen_range(0.0..=1.0);
+    p * u.sqrt()
+}
 pub fn reflect(v: Vec3, n: Vec3) -> Vec3 {
     v - 2.0 * dot(v, n) * n
 }
