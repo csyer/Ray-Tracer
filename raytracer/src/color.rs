@@ -33,3 +33,11 @@ pub fn write_color(img: &mut RgbImage, pos: Position, rgb: Color, samples_per_pi
         (256.0 * clamp(b, 0.0, 0.999)) as u8,
     ]);
 }
+
+pub fn read_color(img: &RgbImage, pos: Position) -> Color {
+    let pixel = img.get_pixel(pos.x, pos.y);
+    let r = (*pixel)[0];
+    let g = (*pixel)[1];
+    let b = (*pixel)[2];
+    Color::new(r as f64, g as f64, b as f64)
+}

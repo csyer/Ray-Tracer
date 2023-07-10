@@ -172,8 +172,18 @@ fn two_perlin_spheres() -> HittableList {
     objects
 }
 
+fn earth() -> HittableList {
+    let earth_texture = Arc::new(ImageTexture::new("input/earthmap.jpg"));
+    let earth_surface = Arc::new(Lambertian::mv(earth_texture));
+    let globe = Arc::new(Sphere::new(Point3::new(0.0, 0.0, 0.0), 2.0, earth_surface));
+
+    let mut objects = HittableList::new();
+    objects.add(globe);
+    objects
+}
+
 fn main() {
-    let path = std::path::Path::new("output/book2/image13.jpg");
+    let path = std::path::Path::new("output/book2/image15.jpg");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -208,8 +218,14 @@ fn main() {
             lookat = Point3::new(0.0, 0.0, 0.0);
             vfov = 20.0;
         }
-        _ => {
+        Some(3) => {
             world = two_perlin_spheres();
+            lookfrom = Point3::new(13.0, 2.0, 3.0);
+            lookat = Point3::new(0.0, 0.0, 0.0);
+            vfov = 20.0;
+        }
+        _ => {
+            world = earth();
             lookfrom = Point3::new(13.0, 2.0, 3.0);
             lookat = Point3::new(0.0, 0.0, 0.0);
             vfov = 20.0;

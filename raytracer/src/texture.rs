@@ -1,6 +1,10 @@
 use std::sync::Arc;
 
+use image::*;
+
+use crate::color::*;
 use crate::perlin::*;
+use crate::rtweekend::*;
 use crate::vec3::*;
 
 pub trait Texture: Send + Sync {
@@ -71,5 +75,36 @@ impl Texture for NoiseTexture {
         Color::new(1.0, 1.0, 1.0)
             * 0.5
             * (1.0 + (self.scale * p.z() + 10.0 * self.noise.turb(p, 7)).sin())
+    }
+}
+
+pub struct ImageTexture {
+    img: RgbImage,
+    width: u32,
+    height: u32,
+}
+
+impl ImageTexture {
+    pub fn new(filename: &str) -> ImageTexture {
+        let dynamic_img = open(filename).unwrap();
+        let (width, height) = dynamic_img.dimensions();
+        let img = dynamic_img.into_rgb8();
+
+        ImageTexture { img, width, height }
+    }
+}
+
+impl Texture for ImageTexture {
+    fn value(&self, u: f64, v: f64, _p: Point3) -> Color {
+        let u = clamp(u, 0.0, 1.0);
+        let v = 1.0 - clamp(v, 0.0, 1.0);
+
+        let i = ((u * self.width as f64) as u32).min(self.width - 1);
+        let j = ((v * self.height as f64) as u32).min(self.height - 1);
+
+        let color_scale = 1.0 / 255.0;
+        let pixel = read_color(&self.img, Position::pos(j, i));
+
+        pixel * color_scale
     }
 }
