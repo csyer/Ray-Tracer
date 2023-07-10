@@ -11,6 +11,7 @@ mod sphere;
 mod vec3;
 // mod bvh;
 mod aarect;
+mod cube;
 mod perlin;
 mod texture;
 
@@ -25,6 +26,7 @@ use std::{fs::File, process::exit};
 use aarect::*;
 use camera::*;
 use color::*;
+use cube::*;
 use hittable::*;
 use hittable_list::*;
 use material::*;
@@ -243,13 +245,31 @@ fn cornell_box() -> HittableList {
         555.0,
         white.clone(),
     )));
-    objects.add(Arc::new(XYRect::new(0.0, 555.0, 0.0, 555.0, 555.0, white)));
+    objects.add(Arc::new(XYRect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        555.0,
+        white.clone(),
+    )));
+
+    objects.add(Arc::new(Cube::new(
+        Point3::new(130.0, 0.0, 65.0),
+        Point3::new(295.0, 165.0, 230.0),
+        white.clone(),
+    )));
+    objects.add(Arc::new(Cube::new(
+        Point3::new(265.0, 0.0, 295.0),
+        Point3::new(430.0, 330.0, 460.0),
+        white,
+    )));
 
     objects
 }
 
 fn main() {
-    let path = std::path::Path::new("output/book2/image18.jpg");
+    let path = std::path::Path::new("output/book2/image19.jpg");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
