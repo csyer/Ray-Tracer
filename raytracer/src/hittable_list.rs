@@ -5,7 +5,7 @@ use crate::hittable::*;
 use crate::material::Material;
 use crate::ray::Ray;
 
-#[derive(Clone)]
+#[derive(Default, Clone)]
 pub struct HittableList {
     objects: Vec<Arc<dyn Hittable>>,
 }
