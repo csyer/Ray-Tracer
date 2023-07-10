@@ -10,6 +10,7 @@ mod rtweekend;
 mod sphere;
 mod vec3;
 // mod bvh;
+mod aarect;
 mod perlin;
 mod texture;
 
@@ -21,6 +22,7 @@ use std::sync::{mpsc, Arc};
 use std::thread::{self, JoinHandle};
 use std::{fs::File, process::exit};
 
+use aarect::*;
 use camera::*;
 use color::*;
 use hittable::*;
@@ -33,7 +35,7 @@ use sphere::*;
 use texture::*;
 use vec3::*;
 
-fn ray_color(r: &Ray, world: &dyn Hittable, depth: i32) -> Color {
+fn ray_color(r: &Ray, background: Color, world: &dyn Hittable, depth: i32) -> Color {
     let mut rec: HitRecord = HitRecord::default();
     if depth <= 0 {
         return Color::new(0.0, 0.0, 0.0);
@@ -43,16 +45,13 @@ fn ray_color(r: &Ray, world: &dyn Hittable, depth: i32) -> Color {
         Some(opt) => {
             let mut scattered: Ray = Ray::default();
             let mut attenuation: Color = Color::default();
-            if opt.scatter(r, &rec, &mut attenuation, &mut scattered) {
-                return attenuation * ray_color(&scattered, world, depth - 1);
+            let emitted = opt.emitted(rec.u, rec.v, rec.p);
+            if !opt.scatter(r, &rec, &mut attenuation, &mut scattered) {
+                return emitted;
             }
-            Color::new(0.0, 0.0, 0.0)
+            attenuation * ray_color(&scattered, background, world, depth - 1)
         }
-        None => {
-            let unit_direction = vec3::unit_vector(r.direction());
-            let t = 0.5 * (unit_direction.y() + 1.0);
-            (1.0 - t) * Color::new(1.0, 1.0, 1.0) + t * Color::new(0.5, 0.7, 1.0)
-        }
+        None => background,
     }
 }
 
@@ -182,8 +181,29 @@ fn earth() -> HittableList {
     objects
 }
 
+fn simple_light() -> HittableList {
+    let mut objects = HittableList::default();
+
+    let pertext = Arc::new(NoiseTexture::new(4.0));
+    objects.add(Arc::new(Sphere::new(
+        Point3::new(0.0, -1000.0, 0.0),
+        1000.0,
+        Arc::new(Lambertian::mv(pertext.clone())),
+    )));
+    objects.add(Arc::new(Sphere::new(
+        Point3::new(0.0, 2.0, 0.0),
+        2.0,
+        Arc::new(Lambertian::mv(pertext)),
+    )));
+
+    let difflight = Arc::new(DiffuseLight::new(Color::new(4.0, 4.0, 4.0)));
+    objects.add(Arc::new(XYRect::new(3.0, 5.0, 1.0, 3.0, -2.0, difflight)));
+
+    objects
+}
+
 fn main() {
-    let path = std::path::Path::new("output/book2/image15.jpg");
+    let path = std::path::Path::new("output/book2/image16.jpg");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -191,22 +211,24 @@ fn main() {
     let aspect_ratio = 16.0 / 9.0;
     let image_width = 400;
     let image_height = ((image_width as f64) / aspect_ratio) as u32;
-    let samples_per_pixel = 100;
+    let mut samples_per_pixel = 100;
     let max_depth = 50;
 
     let quality = 100;
     let mut img: RgbImage = ImageBuffer::new(image_width, image_height);
 
     // World
-    let world: HittableList;
+    let world;
     let lookfrom: Point3;
     let lookat: Point3;
     let mut aperture = 0.0;
     let vfov: f64;
+    let background: Color;
 
     match Some(0) {
         Some(1) => {
             world = random_scene();
+            background = Color::new(0.7, 0.8, 1.0);
             lookfrom = Point3::new(13.0, 2.0, 3.0);
             lookat = Point3::new(0.0, 0.0, 0.0);
             vfov = 20.0;
@@ -214,20 +236,31 @@ fn main() {
         }
         Some(2) => {
             world = two_sphere();
+            background = Color::new(0.7, 0.8, 1.0);
             lookfrom = Point3::new(13.0, 2.0, 3.0);
             lookat = Point3::new(0.0, 0.0, 0.0);
             vfov = 20.0;
         }
         Some(3) => {
             world = two_perlin_spheres();
+            background = Color::new(0.7, 0.8, 1.0);
+            lookfrom = Point3::new(13.0, 2.0, 3.0);
+            lookat = Point3::new(0.0, 0.0, 0.0);
+            vfov = 20.0;
+        }
+        Some(4) => {
+            world = earth();
+            background = Color::new(0.7, 0.8, 1.0);
             lookfrom = Point3::new(13.0, 2.0, 3.0);
             lookat = Point3::new(0.0, 0.0, 0.0);
             vfov = 20.0;
         }
         _ => {
-            world = earth();
-            lookfrom = Point3::new(13.0, 2.0, 3.0);
-            lookat = Point3::new(0.0, 0.0, 0.0);
+            world = simple_light();
+            samples_per_pixel = 400;
+            background = Color::new(0.0, 0.0, 0.0);
+            lookfrom = Point3::new(26.0, 3.0, 6.0);
+            lookat = Point3::new(0.0, 2.0, 0.0);
             vfov = 20.0;
         }
     }
@@ -282,7 +315,7 @@ fn main() {
                     let v = (((image_height - pixel.y - 1) as f64) + rtweekend::random_double())
                         / ((image_height - 1) as f64);
                     let r = _cam.get_ray(u, v, 0.0, 1.0);
-                    pixel_color += ray_color(&r, &_world, max_depth);
+                    pixel_color += ray_color(&r, background, &_world, max_depth);
                     s += 1;
                 }
                 color_list.push((pixel, pixel_color));

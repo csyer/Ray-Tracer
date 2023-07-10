@@ -14,6 +14,10 @@ pub trait Material: Send + Sync {
         attenuation: &mut Color,
         scattered: &mut Ray,
     ) -> bool;
+
+    fn emitted(&self, _u: f64, _v: f64, _p: Point3) -> Color {
+        Color::new(0.0, 0.0, 0.0)
+    }
 }
 
 #[derive(Default)]
@@ -114,6 +118,36 @@ impl Dielectric {
         Dielectric {
             ir: index_of_refraction,
         }
+    }
+}
+
+pub struct DiffuseLight {
+    emit: Arc<dyn Texture>,
+}
+
+impl DiffuseLight {
+    pub fn new(c: Color) -> DiffuseLight {
+        DiffuseLight {
+            emit: Arc::new(SolidColor::new(c)),
+        }
+    }
+    pub fn _mv(emit: Arc<dyn Texture>) -> DiffuseLight {
+        DiffuseLight { emit }
+    }
+}
+
+impl Material for DiffuseLight {
+    fn scatter(
+        &self,
+        _r_in: &Ray,
+        _rec: &HitRecord,
+        _attenuation: &mut Color,
+        _scattered: &mut Ray,
+    ) -> bool {
+        false
+    }
+    fn emitted(&self, u: f64, v: f64, p: Point3) -> Color {
+        self.emit.value(u, v, p)
     }
 }
 
