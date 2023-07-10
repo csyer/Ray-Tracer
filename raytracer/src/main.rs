@@ -157,7 +157,7 @@ fn two_sphere() -> HittableList {
 fn two_perlin_spheres() -> HittableList {
     let mut objects = HittableList::default();
 
-    let pertext = Arc::new(NoiseTexture::default());
+    let pertext = Arc::new(NoiseTexture::new(4.0));
     objects.add(Arc::new(Sphere::new(
         Point3::new(0.0, -1000.0, 0.0),
         1000.0,
@@ -173,7 +173,7 @@ fn two_perlin_spheres() -> HittableList {
 }
 
 fn main() {
-    let path = std::path::Path::new("output/book2/image9.jpg");
+    let path = std::path::Path::new("output/book2/image10.jpg");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
