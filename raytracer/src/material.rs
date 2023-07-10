@@ -121,36 +121,6 @@ impl Dielectric {
     }
 }
 
-pub struct DiffuseLight {
-    emit: Arc<dyn Texture>,
-}
-
-impl DiffuseLight {
-    pub fn new(c: Color) -> DiffuseLight {
-        DiffuseLight {
-            emit: Arc::new(SolidColor::new(c)),
-        }
-    }
-    pub fn _mv(emit: Arc<dyn Texture>) -> DiffuseLight {
-        DiffuseLight { emit }
-    }
-}
-
-impl Material for DiffuseLight {
-    fn scatter(
-        &self,
-        _r_in: &Ray,
-        _rec: &HitRecord,
-        _attenuation: &mut Color,
-        _scattered: &mut Ray,
-    ) -> bool {
-        false
-    }
-    fn emitted(&self, u: f64, v: f64, p: Point3) -> Color {
-        self.emit.value(u, v, p)
-    }
-}
-
 fn reflectance(cosine: f64, ref_idx: f64) -> f64 {
     // Use Schlick's approximation for reflectance.
     let mut r0 = (1.0 - ref_idx) / (1.0 + ref_idx);
@@ -187,6 +157,65 @@ impl Material for Dielectric {
             }
         };
         *scattered = Ray::new(rec.p, direction, r_in.time());
+        true
+    }
+}
+
+pub struct DiffuseLight {
+    emit: Arc<dyn Texture>,
+}
+
+impl DiffuseLight {
+    pub fn new(c: Color) -> DiffuseLight {
+        DiffuseLight {
+            emit: Arc::new(SolidColor::new(c)),
+        }
+    }
+    pub fn _mv(emit: Arc<dyn Texture>) -> DiffuseLight {
+        DiffuseLight { emit }
+    }
+}
+
+impl Material for DiffuseLight {
+    fn scatter(
+        &self,
+        _r_in: &Ray,
+        _rec: &HitRecord,
+        _attenuation: &mut Color,
+        _scattered: &mut Ray,
+    ) -> bool {
+        false
+    }
+    fn emitted(&self, u: f64, v: f64, p: Point3) -> Color {
+        self.emit.value(u, v, p)
+    }
+}
+
+pub struct Isotropic {
+    albedo: Arc<dyn Texture>,
+}
+
+impl Isotropic {
+    pub fn new(c: Color) -> Isotropic {
+        Isotropic {
+            albedo: Arc::new(SolidColor::new(c)),
+        }
+    }
+    // pub fn mv(a: Arc<dyn Texture>) -> Isotropic {
+    //     Isotropic { albedo: a }
+    // }
+}
+
+impl Material for Isotropic {
+    fn scatter(
+        &self,
+        r_in: &Ray,
+        rec: &HitRecord,
+        attenuation: &mut Color,
+        scattered: &mut Ray,
+    ) -> bool {
+        *scattered = Ray::new(rec.p, random_in_unit_sphere(), r_in.time());
+        *attenuation = self.albedo.value(rec.u, rec.v, rec.p);
         true
     }
 }

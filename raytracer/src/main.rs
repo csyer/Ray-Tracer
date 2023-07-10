@@ -11,6 +11,7 @@ mod sphere;
 mod vec3;
 // mod bvh;
 mod aarect;
+mod constant_medium;
 mod cube;
 mod perlin;
 mod texture;
@@ -26,6 +27,7 @@ use std::{fs::File, process::exit};
 use aarect::*;
 use camera::*;
 use color::*;
+use constant_medium::*;
 use cube::*;
 use hittable::*;
 use hittable_list::*;
@@ -275,8 +277,76 @@ fn cornell_box() -> HittableList {
     objects
 }
 
+fn cornell_smoke() -> HittableList {
+    let mut objects = HittableList::default();
+
+    let red = Arc::new(Lambertian::new(Color::new(0.65, 0.05, 0.05)));
+    let white = Arc::new(Lambertian::new(Color::new(0.73, 0.73, 0.73)));
+    let green = Arc::new(Lambertian::new(Color::new(0.12, 0.45, 0.15)));
+    let light = Arc::new(DiffuseLight::new(Color::new(7.0, 7.0, 7.0)));
+
+    objects.add(Arc::new(YZRect::new(0.0, 555.0, 0.0, 555.0, 555.0, green)));
+    objects.add(Arc::new(YZRect::new(0.0, 555.0, 0.0, 555.0, 0.0, red)));
+    objects.add(Arc::new(XZRect::new(
+        113.0, 443.0, 127.0, 432.0, 554.0, light,
+    )));
+    objects.add(Arc::new(XZRect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        555.0,
+        white.clone(),
+    )));
+    objects.add(Arc::new(XZRect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        0.0,
+        white.clone(),
+    )));
+    objects.add(Arc::new(XYRect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        555.0,
+        white.clone(),
+    )));
+
+    let cube1 = Arc::new(Cube::new(
+        Point3::new(0.0, 0.0, 0.0),
+        Point3::new(165.0, 330.0, 165.0),
+        white.clone(),
+    ));
+    let cube1 = Arc::new(RotateY::new(cube1, 15.0));
+    let cube1 = Arc::new(Translate::new(cube1, Vec3::new(265.0, 0.0, 295.0)));
+
+    let cube2 = Arc::new(Cube::new(
+        Point3::new(0.0, 0.0, 0.0),
+        Point3::new(165.0, 165.0, 165.0),
+        white,
+    ));
+    let cube2 = Arc::new(RotateY::new(cube2, -18.0));
+    let cube2 = Arc::new(Translate::new(cube2, Vec3::new(130.0, 0.0, 65.0)));
+
+    objects.add(Arc::new(ConstantMedium::new(
+        cube1,
+        0.01,
+        Color::new(0.0, 0.0, 0.0),
+    )));
+    objects.add(Arc::new(ConstantMedium::new(
+        cube2,
+        0.01,
+        Color::new(1.0, 1.0, 1.0),
+    )));
+
+    objects
+}
+
 fn main() {
-    let path = std::path::Path::new("output/book2/image20.jpg");
+    let path = std::path::Path::new("output/book2/image21.jpg");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -292,7 +362,7 @@ fn main() {
     let lookat: Point3;
     let mut aperture = 0.0;
     let vfov: f64;
-    let background: Color;
+    let mut background = Color::default();
 
     match Some(0) {
         Some(1) => {
@@ -332,12 +402,21 @@ fn main() {
             lookat = Point3::new(0.0, 2.0, 0.0);
             vfov = 20.0;
         }
-        _ => {
+        Some(6) => {
             world = cornell_box();
             aspect_ratio = 1.0;
             image_width = 600;
             samples_per_pixel = 200;
             background = Color::new(0.0, 0.0, 0.0);
+            lookfrom = Point3::new(278.0, 278.0, -800.0);
+            lookat = Point3::new(278.0, 278.0, 0.0);
+            vfov = 40.0;
+        }
+        _ => {
+            world = cornell_smoke();
+            aspect_ratio = 1.0;
+            image_width = 600;
+            samples_per_pixel = 200;
             lookfrom = Point3::new(278.0, 278.0, -800.0);
             lookat = Point3::new(278.0, 278.0, 0.0);
             vfov = 40.0;

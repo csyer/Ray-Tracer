@@ -1,4 +1,5 @@
 use std::f64::INFINITY;
+use std::f64::NEG_INFINITY;
 use std::sync::Arc;
 
 use crate::aabb::*;
@@ -111,7 +112,7 @@ impl RotateY {
         let hasbox = ptr.bounding_box(0.0, 1.0, &mut bbox);
 
         let mut min = Point3::new(INFINITY, INFINITY, INFINITY);
-        let mut max = Point3::new(-INFINITY, -INFINITY, -INFINITY);
+        let mut max = Point3::new(NEG_INFINITY, NEG_INFINITY, NEG_INFINITY);
 
         for i in 0..2 {
             for j in 0..2 {
