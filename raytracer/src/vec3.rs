@@ -1,5 +1,6 @@
-use rand::prelude::*;
 use rand_distr::{Distribution, Normal};
+
+use crate::rtweekend::*;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Vec3 {
@@ -164,19 +165,15 @@ pub type Color = Vec3;
 impl Vec3 {
     pub fn random() -> Vec3 {
         Vec3 {
-            e: [
-                rand::thread_rng().gen_range(0.0..=1.0),
-                rand::thread_rng().gen_range(0.0..=1.0),
-                rand::thread_rng().gen_range(0.0..=1.0),
-            ],
+            e: [random_double(), random_double(), random_double()],
         }
     }
     pub fn random_range(min: f64, max: f64) -> Vec3 {
         Vec3 {
             e: [
-                rand::thread_rng().gen_range(min..=max),
-                rand::thread_rng().gen_range(min..=max),
-                rand::thread_rng().gen_range(min..=max),
+                random_double_range(min, max),
+                random_double_range(min, max),
+                random_double_range(min, max),
             ],
         }
     }
@@ -191,7 +188,7 @@ pub fn random_in_unit_sphere() -> Vec3 {
         ],
     };
     let p = unit_vector(p);
-    let u: f64 = rand::thread_rng().gen_range(0.0..=1.0);
+    let u: f64 = random_double();
     p * u.cbrt()
 }
 
@@ -209,7 +206,7 @@ pub fn random_in_unit_disk() -> Vec3 {
         ],
     };
     let p = unit_vector(p);
-    let u: f64 = rand::thread_rng().gen_range(0.0..=1.0);
+    let u: f64 = random_double();
     p * u.sqrt()
 }
 pub fn reflect(v: Vec3, n: Vec3) -> Vec3 {
