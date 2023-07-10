@@ -10,6 +10,7 @@ mod rtweekend;
 mod sphere;
 mod vec3;
 // mod bvh;
+mod perlin;
 mod texture;
 
 use console::style;
@@ -153,8 +154,26 @@ fn two_sphere() -> HittableList {
     objects
 }
 
+fn two_perlin_spheres() -> HittableList {
+    let mut objects = HittableList::default();
+
+    let pertext = Arc::new(NoiseTexture::default());
+    objects.add(Arc::new(Sphere::new(
+        Point3::new(0.0, -1000.0, 0.0),
+        1000.0,
+        Arc::new(Lambertian::mv(pertext.clone())),
+    )));
+    objects.add(Arc::new(Sphere::new(
+        Point3::new(0.0, 2.0, 0.0),
+        2.0,
+        Arc::new(Lambertian::mv(pertext)),
+    )));
+
+    objects
+}
+
 fn main() {
-    let path = std::path::Path::new("output/book2/image3.jpg");
+    let path = std::path::Path::new("output/book2/image7.jpg");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -183,8 +202,14 @@ fn main() {
             vfov = 20.0;
             aperture = 0.1;
         }
-        _ => {
+        Some(2) => {
             world = two_sphere();
+            lookfrom = Point3::new(13.0, 2.0, 3.0);
+            lookat = Point3::new(0.0, 0.0, 0.0);
+            vfov = 20.0;
+        }
+        _ => {
+            world = two_perlin_spheres();
             lookfrom = Point3::new(13.0, 2.0, 3.0);
             lookat = Point3::new(0.0, 0.0, 0.0);
             vfov = 20.0;
