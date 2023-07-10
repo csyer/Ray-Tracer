@@ -123,6 +123,13 @@ impl std::ops::Mul<f64> for Vec3 {
         }
     }
 }
+impl std::ops::MulAssign<f64> for Vec3 {
+    fn mul_assign(&mut self, t: f64) {
+        *self = Self {
+            e: [self.e[0] * t, self.e[1] * t, self.e[2] * t],
+        }
+    }
+}
 impl std::ops::Mul<Vec3> for f64 {
     type Output = Vec3;
 
