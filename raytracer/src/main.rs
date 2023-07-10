@@ -214,20 +214,50 @@ fn simple_light() -> HittableList {
     objects
 }
 
+fn cornell_box() -> HittableList {
+    let mut objects = HittableList::default();
+
+    let red = Arc::new(Lambertian::new(Color::new(0.65, 0.05, 0.05)));
+    let white = Arc::new(Lambertian::new(Color::new(0.73, 0.73, 0.73)));
+    let green = Arc::new(Lambertian::new(Color::new(0.12, 0.45, 0.15)));
+    let light = Arc::new(DiffuseLight::new(Color::new(15.0, 15.0, 15.0)));
+
+    objects.add(Arc::new(YZRect::new(0.0, 555.0, 0.0, 555.0, 555.0, green)));
+    objects.add(Arc::new(YZRect::new(0.0, 555.0, 0.0, 555.0, 0.0, red)));
+    objects.add(Arc::new(XZRect::new(
+        213.0, 343.0, 227.0, 332.0, 554.0, light,
+    )));
+    objects.add(Arc::new(XZRect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        0.0,
+        white.clone(),
+    )));
+    objects.add(Arc::new(XZRect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        555.0,
+        white.clone(),
+    )));
+    objects.add(Arc::new(XYRect::new(0.0, 555.0, 0.0, 555.0, 555.0, white)));
+
+    objects
+}
+
 fn main() {
-    let path = std::path::Path::new("output/book2/image17.jpg");
+    let path = std::path::Path::new("output/book2/image18.jpg");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
     // Image
-    let aspect_ratio = 16.0 / 9.0;
-    let image_width = 400;
-    let image_height = ((image_width as f64) / aspect_ratio) as u32;
+    let mut aspect_ratio = 16.0 / 9.0;
+    let mut image_width = 400;
     let mut samples_per_pixel = 100;
     let max_depth = 50;
-
-    let quality = 100;
-    let mut img: RgbImage = ImageBuffer::new(image_width, image_height);
 
     // World
     let world;
@@ -267,7 +297,7 @@ fn main() {
             lookat = Point3::new(0.0, 0.0, 0.0);
             vfov = 20.0;
         }
-        _ => {
+        Some(5) => {
             world = simple_light();
             samples_per_pixel = 400;
             background = Color::new(0.0, 0.0, 0.0);
@@ -275,11 +305,25 @@ fn main() {
             lookat = Point3::new(0.0, 2.0, 0.0);
             vfov = 20.0;
         }
+        _ => {
+            world = cornell_box();
+            aspect_ratio = 1.0;
+            image_width = 600;
+            samples_per_pixel = 200;
+            background = Color::new(0.0, 0.0, 0.0);
+            lookfrom = Point3::new(278.0, 278.0, -800.0);
+            lookat = Point3::new(278.0, 278.0, 0.0);
+            vfov = 40.0;
+        }
     }
 
     // Camera
     let vup = Point3::new(0.0, 1.0, 0.0);
     let dist_to_focus = 10.0;
+
+    let image_height = ((image_width as f64) / aspect_ratio) as u32;
+    let quality = 100;
+    let mut img: RgbImage = ImageBuffer::new(image_width, image_height);
 
     let cam = Camera::new(
         lookfrom,
