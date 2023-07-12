@@ -75,7 +75,7 @@ impl Cube {
 }
 
 impl Hittable for Cube {
-    fn bounding_box(&self, _time0: f64, _time1: f64, output_box: &mut crate::aabb::Aabb) -> bool {
+    fn bounding_box(&self, _time0: f64, _time1: f64, output_box: &mut Aabb) -> bool {
         *output_box = Aabb::new(self.cube_min, self.cube_max);
         true
     }

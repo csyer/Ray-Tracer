@@ -7,7 +7,7 @@ use crate::ray::Ray;
 
 #[derive(Default, Clone)]
 pub struct HittableList {
-    objects: Vec<Arc<dyn Hittable>>,
+    pub objects: Vec<Arc<dyn Hittable>>,
 }
 
 impl HittableList {
@@ -47,7 +47,7 @@ impl Hittable for HittableList {
         hit_anything
     }
 
-    fn bounding_box(&self, time0: f64, time1: f64, output_box: &mut crate::aabb::Aabb) -> bool {
+    fn bounding_box(&self, time0: f64, time1: f64, output_box: &mut Aabb) -> bool {
         if self.objects.is_empty() {
             return false;
         }

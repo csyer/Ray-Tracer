@@ -1,10 +1,10 @@
-// use crate::ray::*;
+use crate::ray::*;
 use crate::vec3::*;
 
-#[derive(Default, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct Aabb {
-    minimum: Point3,
-    maximum: Point3,
+    pub minimum: Point3,
+    pub maximum: Point3,
 }
 
 impl Aabb {
@@ -21,22 +21,22 @@ impl Aabb {
         self.maximum
     }
 
-    // pub fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> bool {
-    //     for a in 0..3 {
-    //         let inv_d = 1.0 / r.direction()[a];
-    //         let mut t0 = (self.min()[a] - r.origin()[a]) * inv_d;
-    //         let mut t1 = (self.max()[a] - r.origin()[a]) * inv_d;
-    //         if inv_d < 0.0 {
-    //             std::mem::swap(&mut t0, &mut t1);
-    //         }
-    //         let t_min = t0.max(t_min);
-    //         let t_max = t1.min(t_max);
-    //         if t_max <= t_min {
-    //             return false;
-    //         }
-    //     }
-    //     true
-    // }
+    pub fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> bool {
+        for a in 0..3 {
+            let inv_d = 1.0 / r.direction()[a];
+            let mut t0 = (self.min()[a] - r.origin()[a]) * inv_d;
+            let mut t1 = (self.max()[a] - r.origin()[a]) * inv_d;
+            if inv_d < 0.0 {
+                std::mem::swap(&mut t0, &mut t1)
+            }
+            let t_min = t0.max(t_min);
+            let t_max = t1.min(t_max);
+            if t_max <= t_min {
+                return false;
+            }
+        }
+        true
+    }
 }
 
 pub fn surrounding_box(box0: &Aabb, box1: &Aabb) -> Aabb {

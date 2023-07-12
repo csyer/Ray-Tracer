@@ -3,7 +3,9 @@ use std::sync::Arc;
 
 use crate::aabb::*;
 use crate::hittable::*;
+use crate::hittable_list::*;
 use crate::material::*;
+use crate::ray::*;
 use crate::rtweekend::*;
 
 pub struct BvhNode {
@@ -21,13 +23,11 @@ fn box_compare(a: &Arc<dyn Hittable>, b: &Arc<dyn Hittable>, axis: usize) -> Ord
     }
 
     if box_a.min()[axis] < box_b.min()[axis] {
-        return Ordering::Less;
+        Ordering::Less
+    } else if box_a.min()[axis] == box_b.min()[axis] {
+        Ordering::Equal
     } else {
-        if box_a.min()[axis] == box_b.min()[axis] {
-            return Ordering::Equal;
-        } else {
-            return Ordering::Greater;
-        }
+        Ordering::Greater
     }
 }
 
@@ -44,67 +44,53 @@ fn box_z_compare(a: &Arc<dyn Hittable>, b: &Arc<dyn Hittable>) -> Ordering {
 }
 
 impl BvhNode {
-    pub fn new(
-        src_objects: &mut Vec<Arc<dyn Hittable>>,
+    pub fn build(
+        objects: &mut Vec<Arc<dyn Hittable>>,
         start: usize,
         end: usize,
         time0: f64,
         time1: f64,
     ) -> BvhNode {
-        let mut objects = src_objects.clone();
-
         let axis = random_int(0, 2);
         let comparator = {
             if axis == 0 {
                 box_x_compare
+            } else if axis == 1 {
+                box_y_compare
             } else {
-                if axis == 1 {
-                    box_y_compare
-                } else {
-                    box_z_compare
-                }
+                box_z_compare
             }
         };
 
         let object_span = end - start;
 
-        let mut left_ptr: Option<Arc<dyn Hittable>> = None;
-        let mut right_ptr: Option<Arc<dyn Hittable>> = None;
+        let left: Arc<dyn Hittable>;
+        let right: Arc<dyn Hittable>;
 
         if object_span == 1 {
-            left_ptr = Some(objects[start].clone());
-            right_ptr = Some(objects[start].clone());
+            left = objects[start].clone();
+            right = objects[start].clone();
         } else if object_span == 2 {
             if comparator(&objects[start], &objects[start + 1]) == Ordering::Less {
-                left_ptr = Some(objects[start].clone());
-                right_ptr = Some(objects[start + 1].clone());
+                left = objects[start].clone();
+                right = objects[start + 1].clone();
             } else {
-                left_ptr = Some(objects[start + 1].clone());
-                right_ptr = Some(objects[start].clone());
+                left = objects[start + 1].clone();
+                right = objects[start].clone();
             }
         } else {
-            objects.sort_by(|a, b| comparator(a, b));
+            objects.sort_by(comparator);
 
             let mid = start + object_span / 2;
-            left_ptr = Some(Arc::new(BvhNode::new(
-                &mut objects,
-                start,
-                mid,
-                time0,
-                time1,
-            )));
-            right_ptr = Some(Arc::new(BvhNode::new(&mut objects, mid, end, time0, time1)));
+            left = Arc::new(BvhNode::build(objects, start, mid, time0, time1));
+            right = Arc::new(BvhNode::build(objects, mid, end, time0, time1));
         }
 
         let mut box_left: Aabb = Aabb::default();
         let mut box_right: Aabb = Aabb::default();
-        let left = left_ptr.clone().unwrap();
-        let right = right_ptr.clone().unwrap();
 
-        if !left_ptr.unwrap().bounding_box(time0, time1, &mut box_left)
-            || !right_ptr
-                .unwrap()
-                .bounding_box(time0, time1, &mut box_right)
+        if !left.bounding_box(time0, time1, &mut box_left)
+            || !right.bounding_box(time0, time1, &mut box_right)
         {
             println!("No bounding box in bvh_node constructor.");
         }
@@ -115,38 +101,47 @@ impl BvhNode {
             bbox: surrounding_box(&box_left, &box_right),
         }
     }
+
+    pub fn new(list: &HittableList, time0: f64, time1: f64) -> BvhNode {
+        BvhNode::build(
+            &mut list.objects.clone(),
+            0,
+            list.objects.len(),
+            time0,
+            time1,
+        )
+    }
 }
 
 impl Hittable for BvhNode {
     fn hit(
         &self,
-        r: &crate::ray::Ray,
+        r: &Ray,
         t_min: f64,
         t_max: f64,
         rec: &mut HitRecord,
     ) -> Option<Arc<dyn Material>> {
-        if !self.bbox.hit(&r, t_min, t_max) {
+        if !self.bbox.hit(r, t_min, t_max) {
             return None;
         }
 
-        let hit_left = self.left.hit(&r, t_min, t_max, rec).is_some();
-        let hit_right = self
-            .right
-            .hit(
-                &r,
-                t_min,
-                {
-                    if hit_left {
-                        rec.t
-                    } else {
-                        t_max
-                    }
-                },
-                rec,
-            )
-            .is_some();
-        if hit_left || hit_right {
-            Some(Arc::new(Empty::default()))
+        let hit_left = self.left.hit(r, t_min, t_max, rec);
+        let hit_right = self.right.hit(
+            r,
+            t_min,
+            {
+                if hit_left.is_some() {
+                    rec.t
+                } else {
+                    t_max
+                }
+            },
+            rec,
+        );
+        if hit_right.is_some() {
+            hit_right
+        } else if hit_left.is_some() {
+            hit_left
         } else {
             None
         }

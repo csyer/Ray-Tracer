@@ -1,20 +1,20 @@
 mod aabb;
+mod aarect;
+mod bvh;
 mod camera;
 mod color;
+mod constant_medium;
+mod cube;
 mod hittable;
 mod hittable_list;
 mod material;
 mod moving_shpere;
+mod perlin;
 mod ray;
 mod rtweekend;
 mod sphere;
-mod vec3;
-// mod bvh;
-mod aarect;
-mod constant_medium;
-mod cube;
-mod perlin;
 mod texture;
+mod vec3;
 
 use console::style;
 use image::{ImageBuffer, RgbImage};
@@ -25,6 +25,7 @@ use std::thread::{self, JoinHandle};
 use std::{fs::File, process::exit};
 
 use aarect::*;
+use bvh::*;
 use camera::*;
 use color::*;
 use constant_medium::*;
@@ -345,8 +346,121 @@ fn cornell_smoke() -> HittableList {
     objects
 }
 
+fn final_scene() -> HittableList {
+    let mut boxes1 = HittableList::default();
+    let ground = Arc::new(Lambertian::new(Color::new(0.48, 0.83, 0.53)));
+
+    let boxes_per_side = 20;
+    for i in 0..boxes_per_side {
+        for j in 0..boxes_per_side {
+            let w = 100.0;
+            let x0 = -1000.0 + (i as f64) * w;
+            let z0 = -1000.0 + (j as f64) * w;
+            let y0 = 0.0;
+            let x1 = x0 + w;
+            let y1 = random_double_range(1.0, 101.0);
+            let z1 = z0 + w;
+
+            boxes1.add(Arc::new(Cube::new(
+                Point3::new(x0, y0, z0),
+                Point3::new(x1, y1, z1),
+                ground.clone(),
+            )));
+        }
+    }
+
+    let mut objects = HittableList::default();
+    objects.add(Arc::new(BvhNode::new(&boxes1, 0.0, 1.0)));
+
+    let light = Arc::new(DiffuseLight::new(Color::new(7.0, 7.0, 7.0)));
+    objects.add(Arc::new(XZRect::new(
+        123.0, 423.0, 147.0, 412.0, 554.0, light,
+    )));
+
+    let center1 = Point3::new(400.0, 400.0, 200.0);
+    let center2 = center1 + Vec3::new(30.0, 0.0, 0.0);
+    let moving_sphere_material = Arc::new(Lambertian::new(Color::new(0.7, 0.3, 0.1)));
+    objects.add(Arc::new(MovingSphere::new(
+        center1,
+        center2,
+        0.0,
+        1.0,
+        50.0,
+        moving_sphere_material,
+    )));
+
+    objects.add(Arc::new(Sphere::new(
+        Point3::new(260.0, 150.0, 45.0),
+        50.0,
+        Arc::new(Dielectric::new(1.5)),
+    )));
+    objects.add(Arc::new(Sphere::new(
+        Point3::new(0.0, 150.0, 145.0),
+        50.0,
+        Arc::new(Metal::new(Color::new(0.8, 0.8, 0.9), 1.0)),
+    )));
+
+    let boundary = Arc::new(Sphere::new(
+        Point3::new(360.0, 150.0, 145.0),
+        70.0,
+        Arc::new(Dielectric::new(1.5)),
+    ));
+    objects.add(boundary.clone());
+    objects.add(Arc::new(ConstantMedium::new(
+        boundary,
+        0.2,
+        Color::new(0.2, 0.4, 0.9),
+    )));
+    let boundary = Arc::new(Sphere::new(
+        Point3::new(0.0, 0.0, 0.0),
+        5000.0,
+        Arc::new(Dielectric::new(1.5)),
+    ));
+    objects.add(Arc::new(ConstantMedium::new(
+        boundary,
+        0.0001,
+        Color::new(1.0, 1.0, 1.0),
+    )));
+
+    let emat = Arc::new(Lambertian::mv(Arc::new(ImageTexture::new(
+        "input/earthmap.jpg",
+    ))));
+    objects.add(Arc::new(Sphere::new(
+        Point3::new(400.0, 200.0, 400.0),
+        100.0,
+        emat,
+    )));
+    let pertext = Arc::new(NoiseTexture::new(0.1));
+    objects.add(Arc::new(Sphere::new(
+        Point3::new(220.0, 280.0, 300.0),
+        80.0,
+        Arc::new(Lambertian::mv(pertext)),
+    )));
+
+    let mut boxes2 = HittableList::default();
+    let white = Arc::new(Lambertian::new(Color::new(0.73, 0.73, 0.73)));
+    let ns = 1000;
+    for _j in 0..ns {
+        boxes2.add(Arc::new(Sphere::new(
+            Point3::random_range(0.0, 165.0),
+            10.0,
+            white.clone(),
+        )));
+    }
+
+    objects.add(Arc::new(Translate::new(
+        Arc::new(RotateY::new(
+            Arc::new(BvhNode::new(&boxes2, 0.0, 1.0)),
+            15.0,
+        )),
+        Vec3::new(-100.0, 270.0, 395.0),
+    )));
+
+    objects
+}
+
 fn main() {
-    let path = std::path::Path::new("output/book2/image21.jpg");
+    let path = std::path::Path::new("output/book2/image22.jpg");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -412,12 +526,21 @@ fn main() {
             lookat = Point3::new(278.0, 278.0, 0.0);
             vfov = 40.0;
         }
-        _ => {
+        Some(7) => {
             world = cornell_smoke();
             aspect_ratio = 1.0;
             image_width = 600;
             samples_per_pixel = 200;
             lookfrom = Point3::new(278.0, 278.0, -800.0);
+            lookat = Point3::new(278.0, 278.0, 0.0);
+            vfov = 40.0;
+        }
+        _ => {
+            world = final_scene();
+            aspect_ratio = 1.0;
+            image_width = 800;
+            samples_per_pixel = 10000;
+            lookfrom = Point3::new(478.0, 278.0, -600.0);
             lookat = Point3::new(278.0, 278.0, 0.0);
             vfov = 40.0;
         }
@@ -441,9 +564,10 @@ fn main() {
         dist_to_focus,
     );
 
+    println!("Drawing...");
+
     // Draw
     const THREAD_NUM: usize = 20;
-    let row_per_thread = image_height / (THREAD_NUM as u32);
     let mut threads: Vec<JoinHandle<()>> = Vec::new();
     let mut recv: Vec<_> = Vec::new();
     let mut pixel_list: Vec<Vec<_>> = Vec::new();
@@ -464,7 +588,7 @@ fn main() {
         let _world = world.clone();
         let _cam = cam.clone();
         let pixel_pos = _pixel_pos.clone();
-        let pb = multi_progress.add(ProgressBar::new((row_per_thread * image_width) as u64));
+        let pb = multi_progress.add(ProgressBar::new((_pixel_pos.len()) as u64));
         pb.set_prefix(format!("Process {}", k));
         let handle = thread::spawn(move || {
             let mut color_list: Vec<(Position, Color)> = Vec::new();

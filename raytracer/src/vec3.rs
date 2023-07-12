@@ -4,7 +4,7 @@ use crate::rtweekend::*;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Vec3 {
-    e: [f64; 3],
+    pub e: [f64; 3],
 }
 
 impl Vec3 {
