@@ -30,7 +30,7 @@ impl Lambertian {
             albedo: Arc::new(SolidColor::new(a)),
         }
     }
-    pub fn mv(a: Arc<dyn Texture>) -> Lambertian {
+    pub fn _mv(a: Arc<dyn Texture>) -> Lambertian {
         Lambertian { albedo: a }
     }
 }
@@ -62,7 +62,7 @@ pub struct Metal {
 }
 
 impl Metal {
-    pub fn new(a: Color, f: f64) -> Metal {
+    pub fn _new(a: Color, f: f64) -> Metal {
         Metal {
             albedo: a,
             fuzz: {
@@ -100,7 +100,7 @@ pub struct Dielectric {
 }
 
 impl Dielectric {
-    pub fn new(index_of_refraction: f64) -> Dielectric {
+    pub fn _new(index_of_refraction: f64) -> Dielectric {
         Dielectric {
             ir: index_of_refraction,
         }
@@ -182,14 +182,14 @@ pub struct Isotropic {
 }
 
 impl Isotropic {
-    pub fn new(c: Color) -> Isotropic {
+    pub fn _new(c: Color) -> Isotropic {
         Isotropic {
             albedo: Arc::new(SolidColor::new(c)),
         }
     }
-    // pub fn mv(a: Arc<dyn Texture>) -> Isotropic {
-    //     Isotropic { albedo: a }
-    // }
+    pub fn _mv(a: Arc<dyn Texture>) -> Isotropic {
+        Isotropic { albedo: a }
+    }
 }
 
 impl Material for Isotropic {

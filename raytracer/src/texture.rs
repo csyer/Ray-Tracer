@@ -33,15 +33,15 @@ pub struct CheckerTexture {
 }
 
 impl CheckerTexture {
-    pub fn new(c1: Color, c2: Color) -> CheckerTexture {
+    pub fn _new(c1: Color, c2: Color) -> CheckerTexture {
         CheckerTexture {
             even: Arc::new(SolidColor::new(c1)),
             odd: Arc::new(SolidColor::new(c2)),
         }
     }
-    // pub fn mv(even: Arc<dyn Texture>, odd: Arc<dyn Texture>) -> CheckerTexture {
-    //     CheckerTexture { even, odd }
-    // }
+    pub fn _mv(even: Arc<dyn Texture>, odd: Arc<dyn Texture>) -> CheckerTexture {
+        CheckerTexture { even, odd }
+    }
 }
 
 impl Texture for CheckerTexture {
@@ -62,7 +62,7 @@ pub struct NoiseTexture {
 }
 
 impl NoiseTexture {
-    pub fn new(scale: f64) -> NoiseTexture {
+    pub fn _new(scale: f64) -> NoiseTexture {
         NoiseTexture {
             noise: Perlin::default(),
             scale,
@@ -85,7 +85,7 @@ pub struct ImageTexture {
 }
 
 impl ImageTexture {
-    pub fn new(filename: &str) -> ImageTexture {
+    pub fn _new(filename: &str) -> ImageTexture {
         let dynamic_img = open(filename).unwrap();
         let (width, height) = dynamic_img.dimensions();
         let img = dynamic_img.into_rgb8();
