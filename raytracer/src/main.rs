@@ -13,7 +13,7 @@ mod perlin;
 mod ray;
 mod rtweekend;
 // mod sphere;
-// mod onb;
+mod onb;
 mod texture;
 mod vec3;
 
@@ -56,6 +56,25 @@ fn ray_color(r: &Ray, background: Color, world: &dyn Hittable, depth: i32) -> Co
             if !mat_ptr.scatter(r, &rec, &mut albedo, &mut scattered, &mut pdf) {
                 return emitted;
             }
+
+            // let on_light = Point3::new(random_double_range(213.0,343.0), 554.0, random_double_range(227.0,332.0));
+            // let to_light = on_light - rec.p;
+            // let distance_squared = to_light.length_squared();
+            // let to_light = unit_vector(to_light);
+
+            // if dot(to_light, rec.normal) < 0.0 {
+            //     return emitted;
+            // }
+
+            // let light_area = (343.0-213.0)*(332.0-227.0);
+            // let light_cosine = to_light.y().abs();
+            // if light_cosine < 0.000001 {
+            //     return emitted;
+            // }
+
+            // pdf = distance_squared / (light_cosine * light_area);
+            // scattered = Ray::new(rec.p, to_light, r.time());
+
             emitted
                 + albedo
                     * mat_ptr.scattering_pdf(r, &rec, &scattered)
@@ -126,7 +145,7 @@ fn cornell_box() -> HittableList {
 }
 
 fn main() {
-    let path = std::path::Path::new("output/book3/image2.jpg");
+    let path = std::path::Path::new("output/book3/image3.jpg");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 

@@ -23,9 +23,15 @@ impl Onb {
         a.x() * self.u() + a.y() * self.v() + a.z() * self.w()
     }
 
-    pub fn build_from_w (&mut self, n: Vec3) {
+    pub fn build_from_w(&mut self, n: Vec3) {
         self.axis[2] = unit_vector(n);
-        let a = { if self.w().x().abs() > 0.9 { Vec3::new(0.0,1.0,0.0) } else { Vec3::new(1.0,0.0,0.0)} };
+        let a = {
+            if self.w().x().abs() > 0.9 {
+                Vec3::new(0.0, 1.0, 0.0)
+            } else {
+                Vec3::new(1.0, 0.0, 0.0)
+            }
+        };
         self.axis[1] = unit_vector(cross(self.w(), a));
         self.axis[0] = cross(self.w(), self.v());
     }

@@ -2,11 +2,11 @@ use std::f64::consts::PI;
 use std::sync::Arc;
 
 use crate::hittable::*;
+use crate::onb::*;
 use crate::ray::*;
 use crate::rtweekend::*;
 use crate::texture::*;
 use crate::vec3::*;
-// use crate::onb::*;
 
 pub trait Material: Send + Sync {
     fn scatter(
@@ -52,10 +52,12 @@ impl Material for Lambertian {
         scattered: &mut Ray,
         pdf: &mut f64,
     ) -> bool {
-        let direction = random_in_hemisphere(rec.normal);
+        let mut uvw = Onb::default();
+        uvw.build_from_w(rec.normal);
+        let direction = uvw.local(random_cosine_direction());
         *scattered = Ray::new(rec.p, unit_vector(direction), r_in.time());
         *alb = self.albedo.value(rec.u, rec.v, rec.p);
-        *pdf = 0.5 / PI;
+        *pdf = dot(uvw.w(), scattered.direction()) / PI;
         true
     }
     fn scattering_pdf(&self, _r_in: &Ray, rec: &HitRecord, scattered: &Ray) -> f64 {
