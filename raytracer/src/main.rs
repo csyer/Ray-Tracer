@@ -13,6 +13,7 @@ mod perlin;
 mod ray;
 mod rtweekend;
 // mod sphere;
+// mod onb;
 mod texture;
 mod vec3;
 
@@ -47,14 +48,19 @@ fn ray_color(r: &Ray, background: Color, world: &dyn Hittable, depth: i32) -> Co
     }
     let hit_thing = world.hit(r, 0.001, f64::INFINITY, &mut rec);
     match hit_thing {
-        Some(opt) => {
+        Some(mat_ptr) => {
             let mut scattered: Ray = Ray::default();
-            let mut attenuation: Color = Color::default();
-            let emitted = opt.emitted(rec.u, rec.v, rec.p);
-            if !opt.scatter(r, &rec, &mut attenuation, &mut scattered) {
+            let mut albedo: Color = Color::default();
+            let emitted = mat_ptr.emitted(rec.u, rec.v, rec.p);
+            let mut pdf = 0.0;
+            if !mat_ptr.scatter(r, &rec, &mut albedo, &mut scattered, &mut pdf) {
                 return emitted;
             }
-            attenuation * ray_color(&scattered, background, world, depth - 1)
+            emitted
+                + albedo
+                    * mat_ptr.scattering_pdf(r, &rec, &scattered)
+                    * ray_color(&scattered, background, world, depth - 1)
+                    / pdf
         }
         None => background,
     }
@@ -120,7 +126,7 @@ fn cornell_box() -> HittableList {
 }
 
 fn main() {
-    let path = std::path::Path::new("output/book3/image1.jpg");
+    let path = std::path::Path::new("output/book3/image2.jpg");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -174,17 +180,18 @@ fn main() {
         }
     }
     let multi_progress = MultiProgress::new();
-    for (k, _pixel_pos) in pixel_list.iter().enumerate().take(THREAD_NUM) {
+    for _pixel_pos in pixel_list.iter().take(THREAD_NUM) {
         let (tx, rx) = mpsc::channel();
         recv.push(rx);
         let _world = world.clone();
         let _cam = cam.clone();
         let pixel_pos = _pixel_pos.clone();
-        let pb = multi_progress.add(ProgressBar::new((_pixel_pos.len()) as u64));
-        pb.set_prefix(format!("Process {}", k));
+        let pb = multi_progress.add(ProgressBar::new(100));
+        let mut percent: u64 = 0;
+        let pixel_num = pixel_pos.len();
         let handle = thread::spawn(move || {
             let mut color_list: Vec<(Position, Color)> = Vec::new();
-            for pixel in pixel_pos {
+            for (k, pixel) in pixel_pos.iter().enumerate() {
                 let mut pixel_color = Color::new(0.0, 0.0, 0.0);
                 let mut s = 0;
                 while s < samples_per_pixel {
@@ -195,8 +202,13 @@ fn main() {
                     pixel_color += ray_color(&r, background, &_world, max_depth);
                     s += 1;
                 }
-                color_list.push((pixel, pixel_color));
-                pb.inc(1);
+                color_list.push((*pixel, pixel_color));
+
+                let now_percent = 100 * k as u64 / pixel_num as u64;
+                if now_percent != percent {
+                    percent = now_percent;
+                    pb.set_position(percent);
+                }
             }
             tx.send(color_list).unwrap();
             pb.finish();

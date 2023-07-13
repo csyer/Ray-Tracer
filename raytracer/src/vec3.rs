@@ -1,4 +1,5 @@
 use rand_distr::{Distribution, Normal};
+use std::f64::consts::PI;
 
 use crate::rtweekend::*;
 
@@ -198,8 +199,28 @@ pub fn random_in_unit_sphere() -> Vec3 {
     let u: f64 = random_double();
     p * u.cbrt()
 }
+pub fn random_in_hemisphere(normal: Vec3) -> Vec3 {
+    let in_unit_sphere = random_in_unit_sphere();
+    if dot(in_unit_sphere, normal) > 0.0 {
+        in_unit_sphere
+    } else {
+        -in_unit_sphere
+    }
+}
 
-pub fn random_unit_vector() -> Vec3 {
+pub fn _random_cosine_direction() -> Vec3 {
+    let r1 = random_double();
+    let r2 = random_double();
+    let z = (1.0 - r2).sqrt();
+
+    let phi = 2.0 * PI * r1;
+    let x = phi.cos() * r2.sqrt();
+    let y = phi.sin() * r2.sqrt();
+
+    Vec3::new(x, y, z)
+}
+
+pub fn _random_unit_vector() -> Vec3 {
     unit_vector(random_in_unit_sphere())
 }
 
