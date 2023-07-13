@@ -52,6 +52,13 @@ pub trait Hittable: Send + Sync {
         rec: &mut HitRecord,
     ) -> Option<Arc<dyn Material>>;
     fn bounding_box(&self, time0: f64, time1: f64, output_box: &mut Aabb) -> bool;
+
+    fn pdf_value(&self, _o: Point3, _v: Vec3) -> f64 {
+        0.0
+    }
+    fn random(&self, _o: Vec3) -> Vec3 {
+        Vec3::new(1.0, 0.0, 0.0)
+    }
 }
 
 pub struct Translate {

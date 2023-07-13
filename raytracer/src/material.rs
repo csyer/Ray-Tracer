@@ -28,6 +28,10 @@ pub trait Material: Send + Sync {
     }
 }
 
+#[derive(Default)]
+pub struct Empty {}
+impl Material for Empty {}
+
 pub struct Lambertian {
     albedo: Arc<dyn Texture>,
 }

@@ -43,7 +43,13 @@ use rtweekend::*;
 use pdf::*;
 use vec3::*;
 
-fn ray_color(r: &Ray, background: Color, world: &dyn Hittable, depth: i32) -> Color {
+fn ray_color(
+    r: &Ray,
+    background: Color,
+    world: &dyn Hittable,
+    lights: Arc<dyn Hittable>,
+    depth: i32,
+) -> Color {
     let mut rec: HitRecord = HitRecord::default();
     if depth <= 0 {
         return Color::new(0.0, 0.0, 0.0);
@@ -59,14 +65,14 @@ fn ray_color(r: &Ray, background: Color, world: &dyn Hittable, depth: i32) -> Co
                 return emitted;
             }
 
-            let p = CosinePdf::new(rec.normal);
-            scattered = Ray::new(rec.p, p.generate(), r.time());
-            pdf_val = p.value(scattered.direction());
+            let light_pdf = HittablePdf::new(lights.clone(), rec.p);
+            scattered = Ray::new(rec.p, light_pdf.generate(), r.time());
+            pdf_val = light_pdf.value(scattered.direction());
 
             emitted
                 + albedo
                     * mat_ptr.scattering_pdf(r, &rec, &scattered)
-                    * ray_color(&scattered, background, world, depth - 1)
+                    * ray_color(&scattered, background, world, lights, depth - 1)
                     / pdf_val
         }
         None => background,
@@ -133,7 +139,7 @@ fn cornell_box() -> HittableList {
 }
 
 fn main() {
-    let path = std::path::Path::new("output/book3/image6.jpg");
+    let path = std::path::Path::new("output/book3/image7.jpg");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -141,12 +147,20 @@ fn main() {
     let aspect_ratio = 1.0;
     let image_width = 600;
     let image_height = ((image_width as f64) / aspect_ratio) as u32;
-    let samples_per_pixel = 100;
+    let samples_per_pixel = 10;
     let max_depth = 50;
 
     // World
     let world = cornell_box();
     let background = Color::new(0.0, 0.0, 0.0);
+    let lights = Arc::new(XZRect::new(
+        213.0,
+        343.0,
+        227.0,
+        332.0,
+        554.0,
+        Arc::new(Empty::default()),
+    ));
 
     // Camera
     let lookfrom = Point3::new(278.0, 278.0, -800.0);
@@ -192,6 +206,7 @@ fn main() {
         recv.push(rx);
         let _world = world.clone();
         let _cam = cam.clone();
+        let _lights = lights.clone();
         let pixel_pos = _pixel_pos.clone();
         let pb = multi_progress.add(ProgressBar::new(100));
         let mut percent: u64 = 0;
@@ -206,7 +221,7 @@ fn main() {
                     let v = (((image_height - pixel.y - 1) as f64) + random_double())
                         / ((image_height - 1) as f64);
                     let r = _cam.get_ray(u, v, time0, time1);
-                    pixel_color += ray_color(&r, background, &_world, max_depth);
+                    pixel_color += ray_color(&r, background, &_world, _lights.clone(), max_depth);
                     s += 1;
                 }
                 color_list.push((*pixel, pixel_color));
