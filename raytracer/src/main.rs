@@ -51,7 +51,7 @@ fn ray_color(r: &Ray, background: Color, world: &dyn Hittable, depth: i32) -> Co
         Some(mat_ptr) => {
             let mut scattered: Ray = Ray::default();
             let mut albedo: Color = Color::default();
-            let emitted = mat_ptr.emitted(rec.u, rec.v, rec.p);
+            let emitted = mat_ptr.emitted(r, &rec, rec.u, rec.v, rec.p);
             let mut pdf = 0.0;
             if !mat_ptr.scatter(r, &rec, &mut albedo, &mut scattered, &mut pdf) {
                 return emitted;
@@ -110,14 +110,14 @@ fn cornell_box() -> HittableList {
         0.0,
         white.clone(),
     )));
-    objects.add(Arc::new(XZRect::new(
+    objects.add(Arc::new(FlipFace::new(Arc::new(XZRect::new(
         0.0,
         555.0,
         0.0,
         555.0,
         555.0,
         white.clone(),
-    )));
+    )))));
     objects.add(Arc::new(XYRect::new(
         0.0,
         555.0,
@@ -149,7 +149,7 @@ fn cornell_box() -> HittableList {
 }
 
 fn main() {
-    let path = std::path::Path::new("output/book3/image4.jpg");
+    let path = std::path::Path::new("output/book3/image5.jpg");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 

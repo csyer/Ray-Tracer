@@ -38,7 +38,7 @@ impl Default for HitRecord {
             t: 0.0,
             u: 0.0,
             v: 0.0,
-            front_face: true,
+            front_face: false,
         }
     }
 }
@@ -58,13 +58,11 @@ pub struct Translate {
     ptr: Arc<dyn Hittable>,
     offset: Vec3,
 }
-
 impl Translate {
     pub fn new(ptr: Arc<dyn Hittable>, offset: Vec3) -> Translate {
         Translate { ptr, offset }
     }
 }
-
 impl Hittable for Translate {
     fn bounding_box(&self, time0: f64, time1: f64, output_box: &mut Aabb) -> bool {
         if !self.ptr.bounding_box(time0, time1, output_box) {
@@ -102,7 +100,6 @@ pub struct RotateY {
     hasbox: bool,
     bbox: Aabb,
 }
-
 impl RotateY {
     pub fn new(ptr: Arc<dyn Hittable>, angle: f64) -> RotateY {
         let radians = degrees_to_radians(angle);
@@ -145,7 +142,6 @@ impl RotateY {
         }
     }
 }
-
 impl Hittable for RotateY {
     fn bounding_box(&self, _time0: f64, _time1: f64, output_box: &mut Aabb) -> bool {
         *output_box = self.bbox;
@@ -185,5 +181,34 @@ impl Hittable for RotateY {
             return Some(opt);
         }
         None
+    }
+}
+
+pub struct FlipFace {
+    ptr: Arc<dyn Hittable>,
+}
+impl FlipFace {
+    pub fn new(ptr: Arc<dyn Hittable>) -> FlipFace {
+        FlipFace { ptr }
+    }
+}
+impl Hittable for FlipFace {
+    fn hit(
+        &self,
+        r: &Ray,
+        t_min: f64,
+        t_max: f64,
+        rec: &mut HitRecord,
+    ) -> Option<Arc<dyn Material>> {
+        match self.ptr.hit(r, t_min, t_max, rec) {
+            Some(ptr) => {
+                rec.front_face = !rec.front_face;
+                Some(ptr)
+            }
+            None => None,
+        }
+    }
+    fn bounding_box(&self, time0: f64, time1: f64, output_box: &mut Aabb) -> bool {
+        self.ptr.bounding_box(time0, time1, output_box)
     }
 }
