@@ -17,7 +17,7 @@ pub trait Material: Send + Sync {
         _scattered: &mut Ray,
         _pdf: &mut f64,
     ) -> bool {
-        true
+        false
     }
     fn scattering_pdf(&self, _r_in: &Ray, _rec: &HitRecord, _scattered: &Ray) -> f64 {
         0.0

@@ -14,9 +14,9 @@ mod ray;
 mod rtweekend;
 // mod sphere;
 mod onb;
+mod pdf;
 mod texture;
 mod vec3;
-// mod pdf;
 
 use console::style;
 use image::{ImageBuffer, RgbImage};
@@ -40,6 +40,7 @@ use ray::*;
 use rtweekend::*;
 // use sphere::*;
 // use texture::*;
+use pdf::*;
 use vec3::*;
 
 fn ray_color(r: &Ray, background: Color, world: &dyn Hittable, depth: i32) -> Color {
@@ -51,40 +52,22 @@ fn ray_color(r: &Ray, background: Color, world: &dyn Hittable, depth: i32) -> Co
     match hit_thing {
         Some(mat_ptr) => {
             let mut scattered: Ray = Ray::default();
-            let mut albedo: Color = Color::default();
             let emitted = mat_ptr.emitted(r, &rec, rec.u, rec.v, rec.p);
-            let mut pdf = 0.0;
-            if !mat_ptr.scatter(r, &rec, &mut albedo, &mut scattered, &mut pdf) {
+            let mut pdf_val = 0.0;
+            let mut albedo: Color = Color::default();
+            if !mat_ptr.scatter(r, &rec, &mut albedo, &mut scattered, &mut pdf_val) {
                 return emitted;
             }
 
-            let on_light = Point3::new(
-                random_double_range(213.0, 343.0),
-                554.0,
-                random_double_range(227.0, 332.0),
-            );
-            let to_light = on_light - rec.p;
-            let distance_squared = to_light.length_squared();
-            let to_light = unit_vector(to_light);
-
-            if dot(to_light, rec.normal) < 0.0 {
-                return emitted;
-            }
-
-            let light_area = (343.0 - 213.0) * (332.0 - 227.0);
-            let light_cosine = to_light.y().abs();
-            if light_cosine < 0.000001 {
-                return emitted;
-            }
-
-            pdf = distance_squared / (light_cosine * light_area);
-            scattered = Ray::new(rec.p, to_light, r.time());
+            let p = CosinePdf::new(rec.normal);
+            scattered = Ray::new(rec.p, p.generate(), r.time());
+            pdf_val = p.value(scattered.direction());
 
             emitted
                 + albedo
                     * mat_ptr.scattering_pdf(r, &rec, &scattered)
                     * ray_color(&scattered, background, world, depth - 1)
-                    / pdf
+                    / pdf_val
         }
         None => background,
     }
@@ -150,7 +133,7 @@ fn cornell_box() -> HittableList {
 }
 
 fn main() {
-    let path = std::path::Path::new("output/book3/image5.jpg");
+    let path = std::path::Path::new("output/book3/image6.jpg");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -158,7 +141,7 @@ fn main() {
     let aspect_ratio = 1.0;
     let image_width = 600;
     let image_height = ((image_width as f64) / aspect_ratio) as u32;
-    let samples_per_pixel = 10;
+    let samples_per_pixel = 100;
     let max_depth = 50;
 
     // World
