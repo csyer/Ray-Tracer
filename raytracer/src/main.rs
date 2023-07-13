@@ -57,23 +57,27 @@ fn ray_color(r: &Ray, background: Color, world: &dyn Hittable, depth: i32) -> Co
                 return emitted;
             }
 
-            // let on_light = Point3::new(random_double_range(213.0,343.0), 554.0, random_double_range(227.0,332.0));
-            // let to_light = on_light - rec.p;
-            // let distance_squared = to_light.length_squared();
-            // let to_light = unit_vector(to_light);
+            let on_light = Point3::new(
+                random_double_range(213.0, 343.0),
+                554.0,
+                random_double_range(227.0, 332.0),
+            );
+            let to_light = on_light - rec.p;
+            let distance_squared = to_light.length_squared();
+            let to_light = unit_vector(to_light);
 
-            // if dot(to_light, rec.normal) < 0.0 {
-            //     return emitted;
-            // }
+            if dot(to_light, rec.normal) < 0.0 {
+                return emitted;
+            }
 
-            // let light_area = (343.0-213.0)*(332.0-227.0);
-            // let light_cosine = to_light.y().abs();
-            // if light_cosine < 0.000001 {
-            //     return emitted;
-            // }
+            let light_area = (343.0 - 213.0) * (332.0 - 227.0);
+            let light_cosine = to_light.y().abs();
+            if light_cosine < 0.000001 {
+                return emitted;
+            }
 
-            // pdf = distance_squared / (light_cosine * light_area);
-            // scattered = Ray::new(rec.p, to_light, r.time());
+            pdf = distance_squared / (light_cosine * light_area);
+            scattered = Ray::new(rec.p, to_light, r.time());
 
             emitted
                 + albedo
@@ -145,7 +149,7 @@ fn cornell_box() -> HittableList {
 }
 
 fn main() {
-    let path = std::path::Path::new("output/book3/image3.jpg");
+    let path = std::path::Path::new("output/book3/image4.jpg");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -153,7 +157,7 @@ fn main() {
     let aspect_ratio = 1.0;
     let image_width = 600;
     let image_height = ((image_width as f64) / aspect_ratio) as u32;
-    let samples_per_pixel = 100;
+    let samples_per_pixel = 10;
     let max_depth = 50;
 
     // World
