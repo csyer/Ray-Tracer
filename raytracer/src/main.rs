@@ -16,6 +16,7 @@ mod rtweekend;
 mod onb;
 mod texture;
 mod vec3;
+// mod pdf;
 
 use console::style;
 use image::{ImageBuffer, RgbImage};
@@ -99,25 +100,25 @@ fn cornell_box() -> HittableList {
 
     objects.add(Arc::new(YZRect::new(0.0, 555.0, 0.0, 555.0, 555.0, green)));
     objects.add(Arc::new(YZRect::new(0.0, 555.0, 0.0, 555.0, 0.0, red)));
-    objects.add(Arc::new(XZRect::new(
-        213.0, 343.0, 227.0, 332.0, 554.0, light,
-    )));
-    objects.add(Arc::new(XZRect::new(
-        0.0,
-        555.0,
-        0.0,
-        555.0,
-        0.0,
-        white.clone(),
-    )));
     objects.add(Arc::new(FlipFace::new(Arc::new(XZRect::new(
+        213.0, 343.0, 227.0, 332.0, 554.0, light,
+    )))));
+    objects.add(Arc::new(XZRect::new(
+        0.0,
+        555.0,
+        0.0,
+        555.0,
+        0.0,
+        white.clone(),
+    )));
+    objects.add(Arc::new(XZRect::new(
         0.0,
         555.0,
         0.0,
         555.0,
         555.0,
         white.clone(),
-    )))));
+    )));
     objects.add(Arc::new(XYRect::new(
         0.0,
         555.0,

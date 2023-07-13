@@ -10,13 +10,13 @@ pub struct HittableList {
     pub objects: Vec<Arc<dyn Hittable>>,
 }
 
-// impl HittableList {
-//     pub fn new() -> HittableList {
-//         HittableList {
-//             objects: Vec::new(),
-//         }
-//     }
-// }
+impl HittableList {
+    pub fn _new() -> HittableList {
+        HittableList {
+            objects: Vec::new(),
+        }
+    }
+}
 
 impl HittableList {
     pub fn add(&mut self, object: Arc<dyn Hittable>) {

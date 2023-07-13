@@ -38,7 +38,7 @@ impl Default for HitRecord {
             t: 0.0,
             u: 0.0,
             v: 0.0,
-            front_face: false,
+            front_face: true,
         }
     }
 }
