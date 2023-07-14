@@ -9,12 +9,12 @@ mod hittable;
 mod hittable_list;
 mod material;
 // mod moving_shpere;
+mod onb;
+mod pdf;
 mod perlin;
 mod ray;
 mod rtweekend;
-// mod sphere;
-mod onb;
-mod pdf;
+mod sphere;
 mod texture;
 mod vec3;
 
@@ -57,22 +57,25 @@ fn ray_color(
     let hit_thing = world.hit(r, 0.001, f64::INFINITY, &mut rec);
     match hit_thing {
         Some(mat_ptr) => {
-            let mut scattered: Ray = Ray::default();
+            let mut srec = ScatterRecord::default();
             let emitted = mat_ptr.emitted(r, &rec, rec.u, rec.v, rec.p);
-            let mut pdf_val = 0.0;
-            let mut albedo: Color = Color::default();
-            if !mat_ptr.scatter(r, &rec, &mut albedo, &mut scattered, &mut pdf_val) {
+            if !mat_ptr.scatter(r, &rec, &mut srec) {
                 return emitted;
             }
 
-            let p0 = Arc::new(HittablePdf::new(lights.clone(), rec.p));
-            let p1 = Arc::new(CosinePdf::new(rec.normal));
-            let mixed_pdf = MixturePdf::mv(p0, p1);
-            scattered = Ray::new(rec.p, mixed_pdf.generate(), r.time());
-            pdf_val = mixed_pdf.value(scattered.direction());
+            if srec.is_specular {
+                return srec.attenuation
+                    * ray_color(&srec.specular_ray, background, world, lights, depth - 1);
+            }
+
+            let light_ptr = Arc::new(HittablePdf::new(lights.clone(), rec.p));
+            let mixed_pdf = MixturePdf::mv(light_ptr, srec.pdf_ptr.unwrap());
+
+            let scattered = Ray::new(rec.p, mixed_pdf.generate(), r.time());
+            let pdf_val = mixed_pdf.value(scattered.direction());
 
             emitted
-                + albedo
+                + srec.attenuation
                     * mat_ptr.scattering_pdf(r, &rec, &scattered)
                     * ray_color(&scattered, background, world, lights, depth - 1)
                     / pdf_val
@@ -119,15 +122,17 @@ fn cornell_box() -> HittableList {
         white.clone(),
     )));
 
+    let aluminum = Arc::new(Metal::new(Color::new(0.8, 0.85, 0.88), 0.0));
     let cube1 = Arc::new(Cube::new(
         Point3::new(0.0, 0.0, 0.0),
         Point3::new(165.0, 330.0, 165.0),
-        white.clone(),
+        aluminum,
     ));
     let cube1 = Arc::new(RotateY::new(cube1, 15.0));
     let cube1 = Arc::new(Translate::new(cube1, Vec3::new(265.0, 0.0, 295.0)));
     objects.add(cube1);
 
+    // let glass = Arc::new(Dielectric::new(1.5));
     let cube2 = Arc::new(Cube::new(
         Point3::new(0.0, 0.0, 0.0),
         Point3::new(165.0, 165.0, 165.0),
@@ -141,7 +146,7 @@ fn cornell_box() -> HittableList {
 }
 
 fn main() {
-    let path = std::path::Path::new("output/book3/image8.jpg");
+    let path = std::path::Path::new("output/book3/image9.jpg");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -155,14 +160,19 @@ fn main() {
     // World
     let world = cornell_box();
     let background = Color::new(0.0, 0.0, 0.0);
-    let lights = Arc::new(XZRect::new(
+    let lights = XZRect::new(
         213.0,
         343.0,
         227.0,
         332.0,
         554.0,
         Arc::new(Empty::default()),
-    ));
+    );
+    // lights.add(Arc::new(Sphere::new(
+    //     Point3::new(190.0, 90.0, 190.0),
+    //     90.0,
+    //     Arc::new(Empty::default()),
+    // )));
 
     // Camera
     let lookfrom = Point3::new(278.0, 278.0, -800.0);
@@ -223,7 +233,13 @@ fn main() {
                     let v = (((image_height - pixel.y - 1) as f64) + random_double())
                         / ((image_height - 1) as f64);
                     let r = _cam.get_ray(u, v, time0, time1);
-                    pixel_color += ray_color(&r, background, &_world, _lights.clone(), max_depth);
+                    pixel_color += ray_color(
+                        &r,
+                        background,
+                        &_world,
+                        Arc::new(_lights.clone()),
+                        max_depth,
+                    );
                     s += 1;
                 }
                 color_list.push((*pixel, pixel_color));

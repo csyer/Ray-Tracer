@@ -15,7 +15,7 @@ pub struct Sphere {
 }
 
 impl Sphere {
-    pub fn new(cen: Point3, r: f64, m: Arc<dyn Material>) -> Sphere {
+    pub fn _new(cen: Point3, r: f64, m: Arc<dyn Material>) -> Sphere {
         Sphere {
             center: cen,
             radius: r,

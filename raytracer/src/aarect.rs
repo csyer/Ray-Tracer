@@ -7,6 +7,7 @@ use crate::ray::*;
 use crate::rtweekend::*;
 use crate::vec3::*;
 
+#[derive(Clone)]
 pub struct XYRect {
     mp: Arc<dyn Material>,
     x0: f64,
@@ -66,6 +67,7 @@ impl Hittable for XYRect {
     }
 }
 
+#[derive(Clone)]
 pub struct XZRect {
     mp: Arc<dyn Material>,
     x0: f64,
@@ -149,6 +151,7 @@ impl Hittable for XZRect {
     }
 }
 
+#[derive(Clone)]
 pub struct YZRect {
     mp: Arc<dyn Material>,
     y0: f64,
