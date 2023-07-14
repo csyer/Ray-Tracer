@@ -143,7 +143,7 @@ fn cornell_box() -> HittableList {
 }
 
 fn main() {
-    let path = std::path::Path::new("output/book3/image10.jpg");
+    let path = std::path::Path::new("output/book3/image11.jpg");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -157,19 +157,20 @@ fn main() {
     // World
     let world = cornell_box();
     let background = Color::new(0.0, 0.0, 0.0);
-    // let lights = XZRect::new(
-    //     213.0,
-    //     343.0,
-    //     227.0,
-    //     332.0,
-    //     554.0,
-    //     Arc::new(Empty::default()),
-    // );
-    let lights = Sphere::new(
+    let mut lights = HittableList::default();
+    lights.add(Arc::new(XZRect::new(
+        213.0,
+        343.0,
+        227.0,
+        332.0,
+        554.0,
+        Arc::new(Empty::default()),
+    )));
+    lights.add(Arc::new(Sphere::new(
         Point3::new(190.0, 90.0, 190.0),
         90.0,
         Arc::new(Empty::default()),
-    );
+    )));
 
     // Camera
     let lookfrom = Point3::new(278.0, 278.0, -800.0);
