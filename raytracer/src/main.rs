@@ -65,9 +65,11 @@ fn ray_color(
                 return emitted;
             }
 
-            let light_pdf = HittablePdf::new(lights.clone(), rec.p);
-            scattered = Ray::new(rec.p, light_pdf.generate(), r.time());
-            pdf_val = light_pdf.value(scattered.direction());
+            let p0 = Arc::new(HittablePdf::new(lights.clone(), rec.p));
+            let p1 = Arc::new(CosinePdf::new(rec.normal));
+            let mixed_pdf = MixturePdf::mv(p0, p1);
+            scattered = Ray::new(rec.p, mixed_pdf.generate(), r.time());
+            pdf_val = mixed_pdf.value(scattered.direction());
 
             emitted
                 + albedo
@@ -139,7 +141,7 @@ fn cornell_box() -> HittableList {
 }
 
 fn main() {
-    let path = std::path::Path::new("output/book3/image7.jpg");
+    let path = std::path::Path::new("output/book3/image8.jpg");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -147,7 +149,7 @@ fn main() {
     let aspect_ratio = 1.0;
     let image_width = 600;
     let image_height = ((image_width as f64) / aspect_ratio) as u32;
-    let samples_per_pixel = 10;
+    let samples_per_pixel = 1000;
     let max_depth = 50;
 
     // World
