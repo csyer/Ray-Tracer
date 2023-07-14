@@ -72,7 +72,7 @@ pub struct Metal {
 }
 
 impl Metal {
-    pub fn new(a: Color, f: f64) -> Metal {
+    pub fn _new(a: Color, f: f64) -> Metal {
         Metal {
             albedo: a,
             fuzz: {
@@ -102,7 +102,7 @@ pub struct Dielectric {
 }
 
 impl Dielectric {
-    pub fn _new(index_of_refraction: f64) -> Dielectric {
+    pub fn new(index_of_refraction: f64) -> Dielectric {
         Dielectric {
             ir: index_of_refraction,
         }

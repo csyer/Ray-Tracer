@@ -38,7 +38,7 @@ use material::*;
 // use moving_shpere::*;
 use ray::*;
 use rtweekend::*;
-// use sphere::*;
+use sphere::*;
 // use texture::*;
 use pdf::*;
 use vec3::*;
@@ -122,31 +122,28 @@ fn cornell_box() -> HittableList {
         white.clone(),
     )));
 
-    let aluminum = Arc::new(Metal::new(Color::new(0.8, 0.85, 0.88), 0.0));
+    // let aluminum = Arc::new(Metal::new(Color::new(0.8, 0.85, 0.88), 0.0));
     let cube1 = Arc::new(Cube::new(
         Point3::new(0.0, 0.0, 0.0),
         Point3::new(165.0, 330.0, 165.0),
-        aluminum,
+        white,
     ));
     let cube1 = Arc::new(RotateY::new(cube1, 15.0));
     let cube1 = Arc::new(Translate::new(cube1, Vec3::new(265.0, 0.0, 295.0)));
     objects.add(cube1);
 
-    // let glass = Arc::new(Dielectric::new(1.5));
-    let cube2 = Arc::new(Cube::new(
-        Point3::new(0.0, 0.0, 0.0),
-        Point3::new(165.0, 165.0, 165.0),
-        white,
-    ));
-    let cube2 = Arc::new(RotateY::new(cube2, -18.0));
-    let cube2 = Arc::new(Translate::new(cube2, Vec3::new(130.0, 0.0, 65.0)));
-    objects.add(cube2);
+    let glass = Arc::new(Dielectric::new(1.5));
+    objects.add(Arc::new(Sphere::new(
+        Point3::new(190.0, 90.0, 190.0),
+        90.0,
+        glass,
+    )));
 
     objects
 }
 
 fn main() {
-    let path = std::path::Path::new("output/book3/image9.jpg");
+    let path = std::path::Path::new("output/book3/image10.jpg");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -160,19 +157,19 @@ fn main() {
     // World
     let world = cornell_box();
     let background = Color::new(0.0, 0.0, 0.0);
-    let lights = XZRect::new(
-        213.0,
-        343.0,
-        227.0,
-        332.0,
-        554.0,
+    // let lights = XZRect::new(
+    //     213.0,
+    //     343.0,
+    //     227.0,
+    //     332.0,
+    //     554.0,
+    //     Arc::new(Empty::default()),
+    // );
+    let lights = Sphere::new(
+        Point3::new(190.0, 90.0, 190.0),
+        90.0,
         Arc::new(Empty::default()),
     );
-    // lights.add(Arc::new(Sphere::new(
-    //     Point3::new(190.0, 90.0, 190.0),
-    //     90.0,
-    //     Arc::new(Empty::default()),
-    // )));
 
     // Camera
     let lookfrom = Point3::new(278.0, 278.0, -800.0);
