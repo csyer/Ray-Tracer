@@ -21,6 +21,16 @@ pub fn write_color(img: &mut RgbImage, pos: Position, rgb: Color, samples_per_pi
     let mut g: f64 = rgb.y();
     let mut b: f64 = rgb.z();
 
+    if r.is_nan() {
+        r = 0.0;
+    }
+    if g.is_nan() {
+        g = 0.0;
+    }
+    if b.is_nan() {
+        b = 0.0;
+    }
+
     // Divide the color by the number of samples and gamma-correct for gamma=2.0.
     let scale = 1.0 / (samples_per_pixel as f64);
     r = (r * scale).sqrt();
