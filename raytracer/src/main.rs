@@ -1,14 +1,14 @@
 mod aabb;
 mod aarect;
-// mod bvh;
+mod bvh;
 mod camera;
 mod color;
-// mod constant_medium;
+mod constant_medium;
 mod cube;
 mod hittable;
 mod hittable_list;
 mod material;
-// mod moving_shpere;
+mod moving_shpere;
 mod onb;
 mod pdf;
 mod perlin;
@@ -27,20 +27,20 @@ use std::thread::{self, JoinHandle};
 use std::{fs::File, process::exit};
 
 use aarect::*;
-// use bvh::*;
+use bvh::*;
 use camera::*;
 use color::*;
-// use constant_medium::*;
+use constant_medium::*;
 use cube::*;
 use hittable::*;
 use hittable_list::*;
 use material::*;
-// use moving_shpere::*;
+use moving_shpere::*;
+use pdf::*;
 use ray::*;
 use rtweekend::*;
 use sphere::*;
-// use texture::*;
-use pdf::*;
+use texture::*;
 use vec3::*;
 
 fn ray_color(
@@ -84,96 +84,151 @@ fn ray_color(
     }
 }
 
-fn cornell_box() -> HittableList {
+fn final_scene() -> HittableList {
+    let mut boxes1 = HittableList::default();
+    let ground = Arc::new(Lambertian::new(Color::new(0.48, 0.83, 0.53)));
+
+    let boxes_per_side = 20;
+    for i in 0..boxes_per_side {
+        for j in 0..boxes_per_side {
+            let w = 100.0;
+            let x0 = -1000.0 + (i as f64) * w;
+            let z0 = -1000.0 + (j as f64) * w;
+            let y0 = 0.0;
+            let x1 = x0 + w;
+            let y1 = random_double_range(1.0, 101.0);
+            let z1 = z0 + w;
+
+            boxes1.add(Arc::new(Cube::new(
+                Point3::new(x0, y0, z0),
+                Point3::new(x1, y1, z1),
+                ground.clone(),
+            )));
+        }
+    }
+
     let mut objects = HittableList::default();
+    objects.add(Arc::new(BvhNode::new(&boxes1, 0.0, 1.0)));
 
-    let red = Arc::new(Lambertian::new(Color::new(0.65, 0.05, 0.05)));
-    let white = Arc::new(Lambertian::new(Color::new(0.73, 0.73, 0.73)));
-    let green = Arc::new(Lambertian::new(Color::new(0.12, 0.45, 0.15)));
-    let light = Arc::new(DiffuseLight::new(Color::new(15.0, 15.0, 15.0)));
-
-    objects.add(Arc::new(YZRect::new(0.0, 555.0, 0.0, 555.0, 555.0, green)));
-    objects.add(Arc::new(YZRect::new(0.0, 555.0, 0.0, 555.0, 0.0, red)));
+    let light = Arc::new(DiffuseLight::new(Color::new(7.0, 7.0, 7.0)));
     objects.add(Arc::new(FlipFace::new(Arc::new(XZRect::new(
-        213.0, 343.0, 227.0, 332.0, 554.0, light,
+        123.0, 423.0, 147.0, 412.0, 554.0, light,
     )))));
-    objects.add(Arc::new(XZRect::new(
+
+    let center1 = Point3::new(400.0, 400.0, 200.0);
+    let center2 = center1 + Vec3::new(30.0, 0.0, 0.0);
+    let moving_sphere_material = Arc::new(Lambertian::new(Color::new(0.7, 0.3, 0.1)));
+    objects.add(Arc::new(MovingSphere::new(
+        center1,
+        center2,
         0.0,
-        555.0,
-        0.0,
-        555.0,
-        0.0,
-        white.clone(),
-    )));
-    objects.add(Arc::new(XZRect::new(
-        0.0,
-        555.0,
-        0.0,
-        555.0,
-        555.0,
-        white.clone(),
-    )));
-    objects.add(Arc::new(XYRect::new(
-        0.0,
-        555.0,
-        0.0,
-        555.0,
-        555.0,
-        white.clone(),
+        1.0,
+        50.0,
+        moving_sphere_material,
     )));
 
-    // let aluminum = Arc::new(Metal::new(Color::new(0.8, 0.85, 0.88), 0.0));
-    let cube1 = Arc::new(Cube::new(
-        Point3::new(0.0, 0.0, 0.0),
-        Point3::new(165.0, 330.0, 165.0),
-        white,
-    ));
-    let cube1 = Arc::new(RotateY::new(cube1, 15.0));
-    let cube1 = Arc::new(Translate::new(cube1, Vec3::new(265.0, 0.0, 295.0)));
-    objects.add(cube1);
-
-    let glass = Arc::new(Dielectric::new(1.5));
     objects.add(Arc::new(Sphere::new(
-        Point3::new(190.0, 90.0, 190.0),
-        90.0,
-        glass,
+        Point3::new(260.0, 150.0, 45.0),
+        50.0,
+        Arc::new(Dielectric::new(1.5)),
+    )));
+    objects.add(Arc::new(Sphere::new(
+        Point3::new(0.0, 150.0, 145.0),
+        50.0,
+        Arc::new(Metal::new(Color::new(0.8, 0.8, 0.9), 1.0)),
+    )));
+
+    let boundary = Arc::new(Sphere::new(
+        Point3::new(360.0, 150.0, 145.0),
+        70.0,
+        Arc::new(Dielectric::new(1.5)),
+    ));
+    objects.add(boundary.clone());
+    objects.add(Arc::new(ConstantMedium::new(
+        boundary,
+        0.2,
+        Color::new(0.2, 0.4, 0.9),
+    )));
+    let boundary = Arc::new(Sphere::new(
+        Point3::new(0.0, 0.0, 0.0),
+        5000.0,
+        Arc::new(Dielectric::new(1.5)),
+    ));
+    objects.add(Arc::new(ConstantMedium::new(
+        boundary,
+        0.0001,
+        Color::new(1.0, 1.0, 1.0),
+    )));
+
+    let emat = Arc::new(Lambertian::mv(Arc::new(ImageTexture::new(
+        "input/earthmap.jpg",
+    ))));
+    objects.add(Arc::new(Sphere::new(
+        Point3::new(400.0, 200.0, 400.0),
+        100.0,
+        emat,
+    )));
+    let pertext = Arc::new(NoiseTexture::new(0.1));
+    objects.add(Arc::new(Sphere::new(
+        Point3::new(220.0, 280.0, 300.0),
+        80.0,
+        Arc::new(Lambertian::mv(pertext)),
+    )));
+
+    let mut boxes2 = HittableList::default();
+    let white = Arc::new(Lambertian::new(Color::new(0.73, 0.73, 0.73)));
+    let ns = 1000;
+    for _j in 0..ns {
+        boxes2.add(Arc::new(Sphere::new(
+            Point3::random_range(0.0, 165.0),
+            10.0,
+            white.clone(),
+        )));
+    }
+
+    objects.add(Arc::new(Translate::new(
+        Arc::new(RotateY::new(
+            Arc::new(BvhNode::new(&boxes2, 0.0, 1.0)),
+            15.0,
+        )),
+        Vec3::new(-100.0, 270.0, 395.0),
     )));
 
     objects
 }
 
 fn main() {
-    let path = std::path::Path::new("output/book3/image12.jpg");
+    let path = std::path::Path::new("output/book2/image22.jpg");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
     // Image
     let aspect_ratio = 1.0;
-    let image_width = 600;
+    let image_width = 800;
     let image_height = ((image_width as f64) / aspect_ratio) as u32;
-    let samples_per_pixel = 1000;
+    let samples_per_pixel = 5000;
     let max_depth = 50;
 
     // World
-    let world = cornell_box();
+    let world = final_scene();
     let background = Color::new(0.0, 0.0, 0.0);
     let mut lights = HittableList::default();
     lights.add(Arc::new(XZRect::new(
-        213.0,
-        343.0,
-        227.0,
-        332.0,
+        123.0,
+        423.0,
+        147.0,
+        412.0,
         554.0,
         Arc::new(Empty::default()),
     )));
     lights.add(Arc::new(Sphere::new(
-        Point3::new(190.0, 90.0, 190.0),
-        90.0,
+        Point3::new(260.0, 150.0, 45.0),
+        50.0,
         Arc::new(Empty::default()),
     )));
 
     // Camera
-    let lookfrom = Point3::new(278.0, 278.0, -800.0);
+    let lookfrom = Point3::new(478.0, 278.0, -600.0);
     let lookat = Point3::new(278.0, 278.0, 0.0);
     let vup = Point3::new(0.0, 1.0, 0.0);
     let dist_to_focus = 10.0;

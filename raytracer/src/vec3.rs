@@ -220,7 +220,7 @@ pub fn random_cosine_direction() -> Vec3 {
     Vec3::new(x, y, z)
 }
 
-pub fn _random_unit_vector() -> Vec3 {
+pub fn random_unit_vector() -> Vec3 {
     unit_vector(random_in_unit_sphere())
 }
 

@@ -21,7 +21,7 @@ impl Aabb {
         self.maximum
     }
 
-    pub fn _hit(&self, r: &Ray, t_min: f64, t_max: f64) -> bool {
+    pub fn hit(&self, r: &Ray, t_min: f64, t_max: f64) -> bool {
         for a in 0..3 {
             let inv_d = 1.0 / r.direction()[a];
             let mut t0 = (self.min()[a] - r.origin()[a]) * inv_d;

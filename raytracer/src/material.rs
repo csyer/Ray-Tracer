@@ -44,7 +44,7 @@ impl Lambertian {
             albedo: Arc::new(SolidColor::new(a)),
         }
     }
-    pub fn _mv(a: Arc<dyn Texture>) -> Lambertian {
+    pub fn mv(a: Arc<dyn Texture>) -> Lambertian {
         Lambertian { albedo: a }
     }
 }
@@ -72,7 +72,7 @@ pub struct Metal {
 }
 
 impl Metal {
-    pub fn _new(a: Color, f: f64) -> Metal {
+    pub fn new(a: Color, f: f64) -> Metal {
         Metal {
             albedo: a,
             fuzz: {
@@ -172,32 +172,27 @@ impl Material for DiffuseLight {
     }
 }
 
-// pub struct Isotropic {
-//     albedo: Arc<dyn Texture>,
-// }
+pub struct Isotropic {
+    albedo: Arc<dyn Texture>,
+}
 
-// impl Isotropic {
-//     pub fn _new(c: Color) -> Isotropic {
-//         Isotropic {
-//             albedo: Arc::new(SolidColor::new(c)),
-//         }
-//     }
-//     pub fn _mv(a: Arc<dyn Texture>) -> Isotropic {
-//         Isotropic { albedo: a }
-//     }
-// }
+impl Isotropic {
+    pub fn new(c: Color) -> Isotropic {
+        Isotropic {
+            albedo: Arc::new(SolidColor::new(c)),
+        }
+    }
+    pub fn _mv(a: Arc<dyn Texture>) -> Isotropic {
+        Isotropic { albedo: a }
+    }
+}
 
-// impl Material for Isotropic {
-//     fn scatter(
-//         &self,
-//         r_in: &Ray,
-//         rec: &HitRecord,
-//         albedo: &mut Color,
-//         scattered: &mut Ray,
-//         _pdf: &mut f64,
-//     ) -> bool {
-//         *scattered = Ray::new(rec.p, random_in_unit_sphere(), r_in.time());
-//         *albedo = self.albedo.value(rec.u, rec.v, rec.p);
-//         true
-//     }
-// }
+impl Material for Isotropic {
+    fn scatter(&self, _r_in: &Ray, rec: &HitRecord, srec: &mut ScatterRecord) -> bool {
+        srec.specular_ray = Ray::new(rec.p, random_unit_vector(), 0.0);
+        srec.is_specular = true;
+        srec.attenuation = self.albedo.value(rec.u, rec.v, rec.p);
+        srec.pdf_ptr = None;
+        true
+    }
+}

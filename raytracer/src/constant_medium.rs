@@ -4,8 +4,8 @@ use std::sync::Arc;
 
 use crate::hittable::*;
 use crate::material::*;
-// use crate::texture::*;
 use crate::rtweekend::*;
+use crate::texture::*;
 use crate::vec3::*;
 
 pub struct ConstantMedium {
@@ -22,13 +22,13 @@ impl ConstantMedium {
             neg_inv_density: -1.0 / d,
         }
     }
-    // pub fn mv(boundary: Arc<dyn Hittable>, d: f64, a: Arc<dyn Texture>) -> ConstantMedium {
-    //     ConstantMedium {
-    //         boundary,
-    //         phase_function: Arc::new(Isotropic::mv(a.clone())),
-    //         neg_inv_density: -1.0 / d,
-    //     }
-    // }
+    pub fn _mv(boundary: Arc<dyn Hittable>, d: f64, a: Arc<dyn Texture>) -> ConstantMedium {
+        ConstantMedium {
+            boundary,
+            phase_function: Arc::new(Isotropic::_mv(a.clone())),
+            neg_inv_density: -1.0 / d,
+        }
+    }
 }
 
 impl Hittable for ConstantMedium {

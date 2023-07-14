@@ -62,7 +62,7 @@ pub struct NoiseTexture {
 }
 
 impl NoiseTexture {
-    pub fn _new(scale: f64) -> NoiseTexture {
+    pub fn new(scale: f64) -> NoiseTexture {
         NoiseTexture {
             noise: Perlin::default(),
             scale,
@@ -85,7 +85,7 @@ pub struct ImageTexture {
 }
 
 impl ImageTexture {
-    pub fn _new(filename: &str) -> ImageTexture {
+    pub fn new(filename: &str) -> ImageTexture {
         let dynamic_img = open(filename).unwrap();
         let (width, height) = dynamic_img.dimensions();
         let img = dynamic_img.into_rgb8();

@@ -209,4 +209,28 @@ impl Hittable for YZRect {
 
         Some(self.mp.clone())
     }
+
+    fn pdf_value(&self, o: Point3, v: Vec3) -> f64 {
+        let mut rec = HitRecord::default();
+        if self
+            .hit(&Ray::new(o, v, 0.0), 0.001, std::f64::INFINITY, &mut rec)
+            .is_none()
+        {
+            return 0.0;
+        }
+
+        let area = (self.y1 - self.y0) * (self.z1 - self.z0);
+        let distance_squared = rec.t * rec.t * v.length_squared();
+        let cosine = (dot(v, rec.normal) / v.length()).abs();
+
+        distance_squared / (cosine * area)
+    }
+    fn random(&self, o: Vec3) -> Vec3 {
+        let random_point = Point3::new(
+            self.k,
+            random_double_range(self.y0, self.y1),
+            random_double_range(self.z0, self.z1),
+        );
+        random_point - o
+    }
 }
