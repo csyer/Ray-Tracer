@@ -240,7 +240,7 @@ fn main() {
     let quality = 100;
     let mut img: RgbImage = ImageBuffer::new(image_width, image_height);
 
-    const THREAD_NUM: usize = 20;
+    const THREAD_NUM: usize = 2;
     let mut threads: Vec<JoinHandle<()>> = Vec::new();
     let mut recv: Vec<_> = Vec::new();
     let mut pixel_list: Vec<Vec<_>> = Vec::new();
