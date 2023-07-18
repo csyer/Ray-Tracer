@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::aabb::*;
 use crate::aarect::*;
 use crate::hittable::*;
@@ -14,57 +12,57 @@ pub struct Cube {
 }
 
 impl Cube {
-    pub fn new(p0: Point3, p1: Point3, ptr: Arc<dyn Material>) -> Cube {
+    pub fn new<M: 'static + Material + Copy>(p0: Point3, p1: Point3, ptr: M) -> Cube {
         let mut sides = HittableList::default();
-        sides.add(Arc::new(XYRect::new(
+        sides.add(Box::new(XYRect::new(
             p0.x(),
             p1.x(),
             p0.y(),
             p1.y(),
             p1.z(),
-            Arc::clone(&ptr),
+            ptr,
         )));
-        sides.add(Arc::new(XYRect::new(
+        sides.add(Box::new(XYRect::new(
             p0.x(),
             p1.x(),
             p0.y(),
             p1.y(),
             p0.z(),
-            Arc::clone(&ptr),
-        )));
-
-        sides.add(Arc::new(XZRect::new(
-            p0.x(),
-            p1.x(),
-            p0.z(),
-            p1.z(),
-            p1.y(),
-            Arc::clone(&ptr),
-        )));
-        sides.add(Arc::new(XZRect::new(
-            p0.x(),
-            p1.x(),
-            p0.z(),
-            p1.z(),
-            p0.y(),
-            Arc::clone(&ptr),
+            ptr,
         )));
 
-        sides.add(Arc::new(YZRect::new(
+        sides.add(Box::new(XZRect::new(
+            p0.x(),
+            p1.x(),
+            p0.z(),
+            p1.z(),
+            p1.y(),
+            ptr,
+        )));
+        sides.add(Box::new(XZRect::new(
+            p0.x(),
+            p1.x(),
+            p0.z(),
+            p1.z(),
+            p0.y(),
+            ptr,
+        )));
+
+        sides.add(Box::new(YZRect::new(
             p0.y(),
             p1.y(),
             p0.z(),
             p1.z(),
             p1.x(),
-            Arc::clone(&ptr),
+            ptr,
         )));
-        sides.add(Arc::new(YZRect::new(
+        sides.add(Box::new(YZRect::new(
             p0.y(),
             p1.y(),
             p0.z(),
             p1.z(),
             p0.x(),
-            Arc::clone(&ptr),
+            ptr,
         )));
         Cube {
             cube_min: p0,
@@ -85,7 +83,7 @@ impl Hittable for Cube {
         t_min: f64,
         t_max: f64,
         rec: &mut HitRecord,
-    ) -> Option<std::sync::Arc<dyn crate::material::Material>> {
+    ) -> Option<&dyn Material> {
         self.sides.hit(r, t_min, t_max, rec)
     }
 }

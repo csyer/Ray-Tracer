@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use image::*;
 
 use crate::color::*;
@@ -11,40 +9,37 @@ pub trait Texture: Send + Sync {
     fn value(&self, u: f64, v: f64, p: Point3) -> Color;
 }
 
+#[derive(Clone, Copy, Default)]
 pub struct SolidColor {
     color_value: Color,
 }
-
 impl SolidColor {
     pub fn new(c: Color) -> SolidColor {
         SolidColor { color_value: c }
     }
 }
-
 impl Texture for SolidColor {
     fn value(&self, _u: f64, _v: f64, _p: Point3) -> Color {
         self.color_value
     }
 }
 
-pub struct CheckerTexture {
-    even: Arc<dyn Texture>,
-    odd: Arc<dyn Texture>,
+pub struct CheckerTexture<T0: Texture, T1: Texture> {
+    even: T0,
+    odd: T1,
 }
-
-impl CheckerTexture {
-    pub fn _new(c1: Color, c2: Color) -> CheckerTexture {
+impl<T0: Texture, T1: Texture> CheckerTexture<T0, T1> {
+    pub fn _new(c1: Color, c2: Color) -> CheckerTexture<SolidColor, SolidColor> {
         CheckerTexture {
-            even: Arc::new(SolidColor::new(c1)),
-            odd: Arc::new(SolidColor::new(c2)),
+            even: SolidColor::new(c1),
+            odd: SolidColor::new(c2),
         }
     }
-    pub fn _mv(even: Arc<dyn Texture>, odd: Arc<dyn Texture>) -> CheckerTexture {
+    pub fn _mv(even: T0, odd: T1) -> CheckerTexture<T0, T1> {
         CheckerTexture { even, odd }
     }
 }
-
-impl Texture for CheckerTexture {
+impl<T0: Texture, T1: Texture> Texture for CheckerTexture<T0, T1> {
     fn value(&self, u: f64, v: f64, p: Point3) -> Color {
         let sines = (10.0 * p.x()).sin() * (10.0 * p.y()).sin() * (10.0 * p.z()).sin();
         if sines < 0.0 {
@@ -60,7 +55,6 @@ pub struct NoiseTexture {
     noise: Perlin,
     scale: f64,
 }
-
 impl NoiseTexture {
     pub fn new(scale: f64) -> NoiseTexture {
         NoiseTexture {
@@ -69,7 +63,6 @@ impl NoiseTexture {
         }
     }
 }
-
 impl Texture for NoiseTexture {
     fn value(&self, _u: f64, _v: f64, p: Point3) -> Color {
         Color::new(1.0, 1.0, 1.0)
@@ -83,7 +76,6 @@ pub struct ImageTexture {
     width: u32,
     height: u32,
 }
-
 impl ImageTexture {
     pub fn new(filename: &str) -> ImageTexture {
         let dynamic_img = open(filename).unwrap();
@@ -93,7 +85,6 @@ impl ImageTexture {
         ImageTexture { img, width, height }
     }
 }
-
 impl Texture for ImageTexture {
     fn value(&self, u: f64, v: f64, _p: Point3) -> Color {
         let u = clamp(u, 0.0, 1.0);

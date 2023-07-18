@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::aabb::*;
 use crate::hittable::*;
 use crate::material::*;
@@ -7,9 +5,9 @@ use crate::ray::*;
 use crate::rtweekend::*;
 use crate::vec3::*;
 
-#[derive(Clone)]
-pub struct XYRect {
-    mp: Arc<dyn Material>,
+#[derive(Copy, Clone)]
+pub struct XYRect<M: Material> {
+    mp: M,
     x0: f64,
     x1: f64,
     y0: f64,
@@ -17,8 +15,8 @@ pub struct XYRect {
     k: f64,
 }
 
-impl XYRect {
-    pub fn new(x0: f64, x1: f64, y0: f64, y1: f64, k: f64, mp: Arc<dyn Material>) -> XYRect {
+impl<M: Material> XYRect<M> {
+    pub fn new(x0: f64, x1: f64, y0: f64, y1: f64, k: f64, mp: M) -> XYRect<M> {
         XYRect {
             mp,
             x0,
@@ -30,7 +28,7 @@ impl XYRect {
     }
 }
 
-impl Hittable for XYRect {
+impl<M: Material> Hittable for XYRect<M> {
     fn bounding_box(&self, _time0: f64, _time1: f64, output_box: &mut Aabb) -> bool {
         *output_box = Aabb::new(
             Point3::new(self.x0, self.y0, self.k - 0.0001),
@@ -45,7 +43,7 @@ impl Hittable for XYRect {
         t_min: f64,
         t_max: f64,
         rec: &mut HitRecord,
-    ) -> Option<Arc<dyn Material>> {
+    ) -> Option<&dyn Material> {
         let t = (self.k - r.origin().z()) / r.direction().z();
         if t < t_min || t > t_max {
             return None;
@@ -63,13 +61,13 @@ impl Hittable for XYRect {
         rec.set_face_normal(r, outward_normal);
         rec.p = r.at(t);
 
-        Some(self.mp.clone())
+        Some(&self.mp)
     }
 }
 
-#[derive(Clone)]
-pub struct XZRect {
-    mp: Arc<dyn Material>,
+#[derive(Copy, Clone)]
+pub struct XZRect<M: Material> {
+    mp: M,
     x0: f64,
     x1: f64,
     z0: f64,
@@ -77,8 +75,8 @@ pub struct XZRect {
     k: f64,
 }
 
-impl XZRect {
-    pub fn new(x0: f64, x1: f64, z0: f64, z1: f64, k: f64, mp: Arc<dyn Material>) -> XZRect {
+impl<M: Material> XZRect<M> {
+    pub fn new(x0: f64, x1: f64, z0: f64, z1: f64, k: f64, mp: M) -> XZRect<M> {
         XZRect {
             mp,
             x0,
@@ -90,7 +88,7 @@ impl XZRect {
     }
 }
 
-impl Hittable for XZRect {
+impl<M: Material> Hittable for XZRect<M> {
     fn bounding_box(&self, _time0: f64, _time1: f64, output_box: &mut Aabb) -> bool {
         *output_box = Aabb::new(
             Point3::new(self.x0, self.k - 0.0001, self.z0),
@@ -105,7 +103,7 @@ impl Hittable for XZRect {
         t_min: f64,
         t_max: f64,
         rec: &mut HitRecord,
-    ) -> Option<Arc<dyn Material>> {
+    ) -> Option<&dyn Material> {
         let t = (self.k - r.origin().y()) / r.direction().y();
         if t < t_min || t > t_max {
             return None;
@@ -123,7 +121,7 @@ impl Hittable for XZRect {
         rec.set_face_normal(r, outward_normal);
         rec.p = r.at(t);
 
-        Some(self.mp.clone())
+        Some(&self.mp)
     }
 
     fn pdf_value(&self, o: Point3, v: Vec3) -> f64 {
@@ -151,9 +149,9 @@ impl Hittable for XZRect {
     }
 }
 
-#[derive(Clone)]
-pub struct YZRect {
-    mp: Arc<dyn Material>,
+#[derive(Copy, Clone)]
+pub struct YZRect<M: Material> {
+    mp: M,
     y0: f64,
     y1: f64,
     z0: f64,
@@ -161,8 +159,8 @@ pub struct YZRect {
     k: f64,
 }
 
-impl YZRect {
-    pub fn new(y0: f64, y1: f64, z0: f64, z1: f64, k: f64, mp: Arc<dyn Material>) -> YZRect {
+impl<M: Material> YZRect<M> {
+    pub fn new(y0: f64, y1: f64, z0: f64, z1: f64, k: f64, mp: M) -> YZRect<M> {
         YZRect {
             mp,
             y0,
@@ -174,7 +172,7 @@ impl YZRect {
     }
 }
 
-impl Hittable for YZRect {
+impl<M: Material> Hittable for YZRect<M> {
     fn bounding_box(&self, _time0: f64, _time1: f64, output_box: &mut Aabb) -> bool {
         *output_box = Aabb::new(
             Point3::new(self.k - 0.0001, self.y0, self.z0),
@@ -189,7 +187,7 @@ impl Hittable for YZRect {
         t_min: f64,
         t_max: f64,
         rec: &mut HitRecord,
-    ) -> Option<Arc<dyn Material>> {
+    ) -> Option<&dyn Material> {
         let t = (self.k - r.origin().x()) / r.direction().x();
         if t < t_min || t > t_max {
             return None;
@@ -207,7 +205,7 @@ impl Hittable for YZRect {
         rec.set_face_normal(r, outward_normal);
         rec.p = r.at(t);
 
-        Some(self.mp.clone())
+        Some(&self.mp)
     }
 
     fn pdf_value(&self, o: Point3, v: Vec3) -> f64 {

@@ -1,6 +1,5 @@
 use std::f64::INFINITY;
 use std::f64::NEG_INFINITY;
-use std::sync::Arc;
 
 use crate::hittable::*;
 use crate::material::*;
@@ -8,30 +7,32 @@ use crate::rtweekend::*;
 use crate::texture::*;
 use crate::vec3::*;
 
-pub struct ConstantMedium {
-    boundary: Arc<dyn Hittable>,
-    phase_function: Arc<dyn Material>,
+pub struct ConstantMedium<H: Hittable, M: Material> {
+    boundary: H,
+    phase_function: M,
     neg_inv_density: f64,
 }
 
-impl ConstantMedium {
-    pub fn new(boundary: Arc<dyn Hittable>, d: f64, c: Color) -> ConstantMedium {
+impl<H: Hittable, T: Texture> ConstantMedium<H, Isotropic<T>> {
+    pub fn _mv(boundary: H, d: f64, a: T) -> ConstantMedium<H, Isotropic<T>> {
         ConstantMedium {
             boundary,
-            phase_function: Arc::new(Isotropic::new(c)),
+            phase_function: Isotropic::_mv(a),
             neg_inv_density: -1.0 / d,
         }
     }
-    pub fn _mv(boundary: Arc<dyn Hittable>, d: f64, a: Arc<dyn Texture>) -> ConstantMedium {
+}
+impl<H: Hittable> ConstantMedium<H, Isotropic<SolidColor>> {
+    pub fn new(boundary: H, d: f64, c: Color) -> ConstantMedium<H, Isotropic<SolidColor>> {
         ConstantMedium {
             boundary,
-            phase_function: Arc::new(Isotropic::_mv(a.clone())),
+            phase_function: Isotropic::<SolidColor>::new(c),
             neg_inv_density: -1.0 / d,
         }
     }
 }
 
-impl Hittable for ConstantMedium {
+impl<H: Hittable, M: Material> Hittable for ConstantMedium<H, M> {
     fn bounding_box(&self, time0: f64, time1: f64, output_box: &mut crate::aabb::Aabb) -> bool {
         self.boundary.bounding_box(time0, time1, output_box)
     }
@@ -41,7 +42,7 @@ impl Hittable for ConstantMedium {
         t_min: f64,
         t_max: f64,
         rec: &mut HitRecord,
-    ) -> Option<Arc<dyn Material>> {
+    ) -> Option<&dyn Material> {
         let mut rec1 = HitRecord::default();
         let mut rec2 = HitRecord::default();
 
@@ -77,6 +78,6 @@ impl Hittable for ConstantMedium {
         rec.normal = Vec3::new(1.0, 0.0, 0.0); // arbitrary
         rec.front_face = true; // also arbitrary
 
-        Some(self.phase_function.clone())
+        Some(&self.phase_function)
     }
 }

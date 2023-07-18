@@ -1,5 +1,4 @@
 use std::f64::consts::PI;
-use std::sync::Arc;
 
 use crate::hittable::*;
 use crate::onb::*;
@@ -36,16 +35,16 @@ impl Pdf for CosinePdf {
     }
 }
 
-pub struct HittablePdf {
+pub struct HittablePdf<'a> {
     o: Point3,
-    ptr: Arc<dyn Hittable>,
+    ptr: &'a dyn Hittable,
 }
-impl HittablePdf {
-    pub fn new(ptr: Arc<dyn Hittable>, o: Point3) -> HittablePdf {
+impl<'a> HittablePdf<'a> {
+    pub fn new(ptr: &'a dyn Hittable, o: Point3) -> HittablePdf<'a> {
         HittablePdf { o, ptr }
     }
 }
-impl Pdf for HittablePdf {
+impl<'a> Pdf for HittablePdf<'a> {
     fn generate(&self) -> Vec3 {
         self.ptr.random(self.o)
     }
@@ -54,15 +53,15 @@ impl Pdf for HittablePdf {
     }
 }
 
-pub struct MixturePdf {
-    p: [Arc<dyn Pdf>; 2],
+pub struct MixturePdf<'a> {
+    p: [&'a dyn Pdf; 2],
 }
-impl MixturePdf {
-    pub fn mv(p0: Arc<dyn Pdf>, p1: Arc<dyn Pdf>) -> MixturePdf {
+impl<'a> MixturePdf<'a> {
+    pub fn mv(p0: &'a dyn Pdf, p1: &'a dyn Pdf) -> MixturePdf<'a> {
         MixturePdf { p: [p0, p1] }
     }
 }
-impl Pdf for MixturePdf {
+impl<'a> Pdf for MixturePdf<'a> {
     fn value(&self, direction: Vec3) -> f64 {
         0.5 * self.p[0].value(direction) + 0.5 * self.p[1].value(direction)
     }

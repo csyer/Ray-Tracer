@@ -1,6 +1,5 @@
 use std::f64::INFINITY;
 use std::f64::NEG_INFINITY;
-use std::sync::Arc;
 
 use crate::aabb::*;
 use crate::material::Material;
@@ -44,13 +43,7 @@ impl Default for HitRecord {
 }
 
 pub trait Hittable: Send + Sync {
-    fn hit(
-        &self,
-        r: &Ray,
-        t_min: f64,
-        t_max: f64,
-        rec: &mut HitRecord,
-    ) -> Option<Arc<dyn Material>>;
+    fn hit(&self, r: &Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> Option<&dyn Material>;
     fn bounding_box(&self, time0: f64, time1: f64, output_box: &mut Aabb) -> bool;
 
     fn pdf_value(&self, _o: Point3, _v: Vec3) -> f64 {
@@ -61,16 +54,16 @@ pub trait Hittable: Send + Sync {
     }
 }
 
-pub struct Translate {
-    ptr: Arc<dyn Hittable>,
+pub struct Translate<H: Hittable> {
+    ptr: H,
     offset: Vec3,
 }
-impl Translate {
-    pub fn new(ptr: Arc<dyn Hittable>, offset: Vec3) -> Translate {
+impl<H: Hittable> Translate<H> {
+    pub fn new(ptr: H, offset: Vec3) -> Translate<H> {
         Translate { ptr, offset }
     }
 }
-impl Hittable for Translate {
+impl<H: Hittable> Hittable for Translate<H> {
     fn bounding_box(&self, time0: f64, time1: f64, output_box: &mut Aabb) -> bool {
         if !self.ptr.bounding_box(time0, time1, output_box) {
             return false;
@@ -83,13 +76,7 @@ impl Hittable for Translate {
 
         true
     }
-    fn hit(
-        &self,
-        r: &Ray,
-        t_min: f64,
-        t_max: f64,
-        rec: &mut HitRecord,
-    ) -> Option<Arc<dyn Material>> {
+    fn hit(&self, r: &Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> Option<&dyn Material> {
         let moved_r = Ray::new(r.origin() - self.offset, r.direction(), r.time());
         if let Some(opt) = self.ptr.hit(&moved_r, t_min, t_max, rec) {
             rec.p += self.offset;
@@ -100,15 +87,15 @@ impl Hittable for Translate {
     }
 }
 
-pub struct RotateY {
-    ptr: Arc<dyn Hittable>,
+pub struct RotateY<H: Hittable> {
+    ptr: H,
     sin_theta: f64,
     cos_theta: f64,
     hasbox: bool,
     bbox: Aabb,
 }
-impl RotateY {
-    pub fn new(ptr: Arc<dyn Hittable>, angle: f64) -> RotateY {
+impl<H: Hittable> RotateY<H> {
+    pub fn new(ptr: H, angle: f64) -> RotateY<H> {
         let radians = degrees_to_radians(angle);
         let sin_theta = radians.sin();
         let cos_theta = radians.cos();
@@ -149,18 +136,12 @@ impl RotateY {
         }
     }
 }
-impl Hittable for RotateY {
+impl<H: Hittable> Hittable for RotateY<H> {
     fn bounding_box(&self, _time0: f64, _time1: f64, output_box: &mut Aabb) -> bool {
         *output_box = self.bbox;
         self.hasbox
     }
-    fn hit(
-        &self,
-        r: &Ray,
-        t_min: f64,
-        t_max: f64,
-        rec: &mut HitRecord,
-    ) -> Option<Arc<dyn Material>> {
+    fn hit(&self, r: &Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> Option<&dyn Material> {
         let mut origin = r.origin();
         let mut direction = r.direction();
 
@@ -191,22 +172,16 @@ impl Hittable for RotateY {
     }
 }
 
-pub struct FlipFace {
-    ptr: Arc<dyn Hittable>,
+pub struct FlipFace<H: Hittable> {
+    ptr: H,
 }
-impl FlipFace {
-    pub fn new(ptr: Arc<dyn Hittable>) -> FlipFace {
+impl<H: Hittable> FlipFace<H> {
+    pub fn new(ptr: H) -> FlipFace<H> {
         FlipFace { ptr }
     }
 }
-impl Hittable for FlipFace {
-    fn hit(
-        &self,
-        r: &Ray,
-        t_min: f64,
-        t_max: f64,
-        rec: &mut HitRecord,
-    ) -> Option<Arc<dyn Material>> {
+impl<H: Hittable> Hittable for FlipFace<H> {
+    fn hit(&self, r: &Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> Option<&dyn Material> {
         match self.ptr.hit(r, t_min, t_max, rec) {
             Some(ptr) => {
                 rec.front_face = !rec.front_face;

@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::aabb::*;
 use crate::hittable::*;
 use crate::material::Material;
@@ -7,9 +5,9 @@ use crate::ray::*;
 use crate::rtweekend::*;
 use crate::vec3::*;
 
-#[derive(Default, Clone)]
+#[derive(Default)]
 pub struct HittableList {
-    pub objects: Vec<Arc<dyn Hittable>>,
+    pub objects: Vec<Box<dyn Hittable>>,
 }
 
 impl HittableList {
@@ -21,26 +19,20 @@ impl HittableList {
 }
 
 impl HittableList {
-    pub fn add(&mut self, object: Arc<dyn Hittable>) {
+    pub fn add(&mut self, object: Box<dyn Hittable>) {
         self.objects.push(object);
     }
 }
 
 impl Hittable for HittableList {
-    fn hit(
-        &self,
-        r: &Ray,
-        t_min: f64,
-        t_max: f64,
-        rec: &mut HitRecord,
-    ) -> Option<Arc<dyn Material>> {
+    fn hit(&self, r: &Ray, t_min: f64, t_max: f64, rec: &mut HitRecord) -> Option<&dyn Material> {
         let mut temp_rec: HitRecord = HitRecord::default();
-        let mut hit_anything: Option<Arc<dyn Material>> = None;
+        let mut hit_anything: Option<&dyn Material> = None;
         let mut closest_so_far = t_max;
 
         for object in &self.objects {
             if let Some(opt) = object.hit(r, t_min, closest_so_far, &mut temp_rec) {
-                hit_anything = Some(Arc::clone(&opt));
+                hit_anything = Some(opt);
                 closest_so_far = temp_rec.t;
                 *rec = temp_rec;
             }

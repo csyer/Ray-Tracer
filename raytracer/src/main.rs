@@ -47,7 +47,7 @@ fn ray_color(
     r: &Ray,
     background: Color,
     world: &dyn Hittable,
-    lights: Arc<dyn Hittable>,
+    lights: &dyn Hittable,
     depth: i32,
 ) -> Color {
     let mut rec: HitRecord = HitRecord::default();
@@ -59,17 +59,19 @@ fn ray_color(
         Some(mat_ptr) => {
             let mut srec = ScatterRecord::default();
             let emitted = mat_ptr.emitted(r, &rec, rec.u, rec.v, rec.p);
-            if !mat_ptr.scatter(r, &rec, &mut srec) {
+            let (tag, opt) = mat_ptr.scatter(r, &rec, &mut srec);
+            if !tag {
                 return emitted;
             }
 
-            if srec.is_specular {
+            if opt.is_none() {
                 return srec.attenuation
                     * ray_color(&srec.specular_ray, background, world, lights, depth - 1);
             }
 
-            let light_ptr = Arc::new(HittablePdf::new(lights.clone(), rec.p));
-            let mixed_pdf = MixturePdf::mv(light_ptr, srec.pdf_ptr.unwrap());
+            let light_ptr = HittablePdf::new(lights, rec.p);
+            let scatter_ptr = opt.unwrap();
+            let mixed_pdf = MixturePdf::mv(&light_ptr, &*scatter_ptr);
 
             let scattered = Ray::new(rec.p, mixed_pdf.generate(), r.time());
             let pdf_val = mixed_pdf.value(scattered.direction());
@@ -86,7 +88,7 @@ fn ray_color(
 
 fn final_scene() -> HittableList {
     let mut boxes1 = HittableList::default();
-    let ground = Arc::new(Lambertian::new(Color::new(0.48, 0.83, 0.53)));
+    let ground = Lambertian::new(Color::new(0.48, 0.83, 0.53));
 
     let boxes_per_side = 20;
     for i in 0..boxes_per_side {
@@ -99,26 +101,26 @@ fn final_scene() -> HittableList {
             let y1 = random_double_range(1.0, 101.0);
             let z1 = z0 + w;
 
-            boxes1.add(Arc::new(Cube::new(
+            boxes1.add(Box::new(Cube::new(
                 Point3::new(x0, y0, z0),
                 Point3::new(x1, y1, z1),
-                ground.clone(),
+                ground,
             )));
         }
     }
 
     let mut objects = HittableList::default();
-    objects.add(Arc::new(BvhNode::new(&boxes1, 0.0, 1.0)));
+    objects.add(Box::new(BvhNode::new(&mut boxes1, 0.0, 1.0)));
 
-    let light = Arc::new(DiffuseLight::new(Color::new(7.0, 7.0, 7.0)));
-    objects.add(Arc::new(FlipFace::new(Arc::new(XZRect::new(
+    let light = DiffuseLight::new(Color::new(7.0, 7.0, 7.0));
+    objects.add(Box::new(FlipFace::new(XZRect::new(
         123.0, 423.0, 147.0, 412.0, 554.0, light,
-    )))));
+    ))));
 
     let center1 = Point3::new(400.0, 400.0, 200.0);
     let center2 = center1 + Vec3::new(30.0, 0.0, 0.0);
-    let moving_sphere_material = Arc::new(Lambertian::new(Color::new(0.7, 0.3, 0.1)));
-    objects.add(Arc::new(MovingSphere::new(
+    let moving_sphere_material = Lambertian::new(Color::new(0.7, 0.3, 0.1));
+    objects.add(Box::new(MovingSphere::new(
         center1,
         center2,
         0.0,
@@ -127,70 +129,57 @@ fn final_scene() -> HittableList {
         moving_sphere_material,
     )));
 
-    objects.add(Arc::new(Sphere::new(
+    objects.add(Box::new(Sphere::new(
         Point3::new(260.0, 150.0, 45.0),
         50.0,
-        Arc::new(Dielectric::new(1.5)),
+        Dielectric::new(1.5),
     )));
-    objects.add(Arc::new(Sphere::new(
+    objects.add(Box::new(Sphere::new(
         Point3::new(0.0, 150.0, 145.0),
         50.0,
-        Arc::new(Metal::new(Color::new(0.8, 0.8, 0.9), 1.0)),
+        Metal::new(Color::new(0.8, 0.8, 0.9), 1.0),
     )));
 
-    let boundary = Arc::new(Sphere::new(
-        Point3::new(360.0, 150.0, 145.0),
-        70.0,
-        Arc::new(Dielectric::new(1.5)),
-    ));
-    objects.add(boundary.clone());
-    objects.add(Arc::new(ConstantMedium::new(
+    let boundary = Sphere::new(Point3::new(360.0, 150.0, 145.0), 70.0, Dielectric::new(1.5));
+    objects.add(Box::new(boundary));
+    objects.add(Box::new(ConstantMedium::new(
         boundary,
         0.2,
         Color::new(0.2, 0.4, 0.9),
     )));
-    let boundary = Arc::new(Sphere::new(
-        Point3::new(0.0, 0.0, 0.0),
-        5000.0,
-        Arc::new(Dielectric::new(1.5)),
-    ));
-    objects.add(Arc::new(ConstantMedium::new(
+    let boundary = Sphere::new(Point3::new(0.0, 0.0, 0.0), 5000.0, Dielectric::new(1.5));
+    objects.add(Box::new(ConstantMedium::new(
         boundary,
         0.0001,
         Color::new(1.0, 1.0, 1.0),
     )));
 
-    let emat = Arc::new(Lambertian::mv(Arc::new(ImageTexture::new(
-        "input/earthmap.jpg",
-    ))));
-    objects.add(Arc::new(Sphere::new(
+    let emat = Lambertian::mv(ImageTexture::new("input/earthmap.jpg"));
+    objects.add(Box::new(Sphere::new(
         Point3::new(400.0, 200.0, 400.0),
         100.0,
         emat,
     )));
-    let pertext = Arc::new(NoiseTexture::new(0.1));
-    objects.add(Arc::new(Sphere::new(
+    let pertext = NoiseTexture::new(0.1);
+    objects.add(Box::new(Sphere::new(
         Point3::new(220.0, 280.0, 300.0),
         80.0,
-        Arc::new(Lambertian::mv(pertext)),
+        Lambertian::mv(pertext),
     )));
 
     let mut boxes2 = HittableList::default();
-    let white = Arc::new(Lambertian::new(Color::new(0.73, 0.73, 0.73)));
+    let white = Lambertian::new(Color::new(0.73, 0.73, 0.73));
     let ns = 1000;
     for _j in 0..ns {
-        boxes2.add(Arc::new(Sphere::new(
+        boxes2.add(Box::new(Sphere::new(
             Point3::random_range(0.0, 165.0),
             10.0,
-            white.clone(),
+            white,
         )));
     }
 
-    objects.add(Arc::new(Translate::new(
-        Arc::new(RotateY::new(
-            Arc::new(BvhNode::new(&boxes2, 0.0, 1.0)),
-            15.0,
-        )),
+    objects.add(Box::new(Translate::new(
+        RotateY::new(BvhNode::new(&mut boxes2, 0.0, 1.0), 15.0),
         Vec3::new(-100.0, 270.0, 395.0),
     )));
 
@@ -198,7 +187,7 @@ fn final_scene() -> HittableList {
 }
 
 fn main() {
-    let path = std::path::Path::new("output/book2/image22.jpg");
+    let path = std::path::Path::new("output/book2/final_scene2.jpg");
     let prefix = path.parent().unwrap();
     std::fs::create_dir_all(prefix).expect("Cannot create all the parents");
 
@@ -213,18 +202,18 @@ fn main() {
     let world = final_scene();
     let background = Color::new(0.0, 0.0, 0.0);
     let mut lights = HittableList::default();
-    lights.add(Arc::new(XZRect::new(
+    lights.add(Box::new(XZRect::new(
         123.0,
         423.0,
         147.0,
         412.0,
         554.0,
-        Arc::new(Empty::default()),
+        Empty::default(),
     )));
-    lights.add(Arc::new(Sphere::new(
+    lights.add(Box::new(Sphere::new(
         Point3::new(260.0, 150.0, 45.0),
         50.0,
-        Arc::new(Empty::default()),
+        Empty::default(),
     )));
 
     // Camera
@@ -265,6 +254,9 @@ fn main() {
             pixel_list[id].push(Position::pos(j, i));
         }
     }
+    let lights = Arc::new(lights);
+    let world = Arc::new(world);
+    let cam = Arc::new(cam);
     let multi_progress = MultiProgress::new();
     for _pixel_pos in pixel_list.iter().take(THREAD_NUM) {
         let (tx, rx) = mpsc::channel();
@@ -286,13 +278,8 @@ fn main() {
                     let v = (((image_height - pixel.y - 1) as f64) + random_double())
                         / ((image_height - 1) as f64);
                     let r = _cam.get_ray(u, v, time0, time1);
-                    pixel_color += ray_color(
-                        &r,
-                        background,
-                        &_world,
-                        Arc::new(_lights.clone()),
-                        max_depth,
-                    );
+                    pixel_color +=
+                        ray_color(&r, background, _world.as_ref(), _lights.as_ref(), max_depth);
                     s += 1;
                 }
                 color_list.push((*pixel, pixel_color));

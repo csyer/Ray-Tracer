@@ -1,6 +1,5 @@
 use std::f64::consts::PI;
 use std::f64::INFINITY;
-use std::sync::Arc;
 
 use crate::aabb::*;
 use crate::hittable::*;
@@ -9,23 +8,21 @@ use crate::onb::*;
 use crate::ray::*;
 use crate::vec3::*;
 
-#[derive(Clone)]
-pub struct Sphere {
+#[derive(Copy, Clone)]
+pub struct Sphere<M: Material> {
     center: Point3,
     radius: f64,
-    mat_ptr: Option<Arc<dyn Material>>,
+    mat_ptr: M,
 }
-
-impl Sphere {
-    pub fn new(cen: Point3, r: f64, m: Arc<dyn Material>) -> Sphere {
+impl<M: Material> Sphere<M> {
+    pub fn new(center: Point3, radius: f64, mat_ptr: M) -> Sphere<M> {
         Sphere {
-            center: cen,
-            radius: r,
-            mat_ptr: Some(m),
+            center,
+            radius,
+            mat_ptr,
         }
     }
-
-    fn get_sphere_uv(p: Point3, u: &mut f64, v: &mut f64) {
+    pub fn get_sphere_uv(&self, p: Point3, u: &mut f64, v: &mut f64) {
         let theta = (-p.y()).acos();
         let phi = (-p.z()).atan2(p.x()) + PI;
 
@@ -33,15 +30,14 @@ impl Sphere {
         *v = theta / PI;
     }
 }
-
-impl Hittable for Sphere {
+impl<M: Material> Hittable for Sphere<M> {
     fn hit(
         &self,
         r: &crate::ray::Ray,
         t_min: f64,
         t_max: f64,
         rec: &mut HitRecord,
-    ) -> Option<Arc<dyn Material>> {
+    ) -> Option<&dyn Material> {
         let oc = r.origin() - self.center;
         let a = dot(r.direction(), r.direction());
         let half_b = dot(oc, r.direction());
@@ -65,8 +61,9 @@ impl Hittable for Sphere {
         rec.p = r.at(rec.t);
         let outward_normal = (rec.p - self.center) / self.radius;
         rec.set_face_normal(r, outward_normal);
-        Sphere::get_sphere_uv(outward_normal, &mut rec.u, &mut rec.v);
-        self.mat_ptr.clone()
+        self.get_sphere_uv(outward_normal, &mut rec.u, &mut rec.v);
+
+        Some(&self.mat_ptr)
     }
 
     fn bounding_box(&self, _time0: f64, _time1: f64, output_box: &mut Aabb) -> bool {
