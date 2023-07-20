@@ -195,7 +195,7 @@ fn main() {
     let aspect_ratio = 1.0;
     let image_width = 800;
     let image_height = ((image_width as f64) / aspect_ratio) as u32;
-    let samples_per_pixel = 2000;
+    let samples_per_pixel = 1000;
     let max_depth = 50;
 
     // World
@@ -240,7 +240,7 @@ fn main() {
     let quality = 100;
     let mut img: RgbImage = ImageBuffer::new(image_width, image_height);
 
-    const THREAD_NUM: usize = 2;
+    const THREAD_NUM: usize = 8;
     let mut threads: Vec<JoinHandle<()>> = Vec::new();
     let mut recv: Vec<_> = Vec::new();
     let mut pixel_list: Vec<Vec<_>> = Vec::new();
